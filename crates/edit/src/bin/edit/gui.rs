@@ -106,10 +106,11 @@ impl EditApp {
         visuals.widgets.active.bg_fill = egui::Color32::from_rgb(85, 105, 255);
         visuals.widgets.active.fg_stroke.color = egui::Color32::WHITE;
 
-        visuals.widgets.noninteractive.corner_radius = egui::CornerRadius::same(8);
-        visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(8);
-        visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(8);
-        visuals.widgets.active.corner_radius = egui::CornerRadius::same(8);
+        visuals.widgets.noninteractive.corner_radius = egui::CornerRadius::ZERO;
+        visuals.widgets.inactive.corner_radius = egui::CornerRadius::ZERO;
+        visuals.widgets.hovered.corner_radius = egui::CornerRadius::ZERO;
+        visuals.widgets.active.corner_radius = egui::CornerRadius::ZERO;
+        visuals.window_corner_radius = egui::CornerRadius::ZERO;
         cc.egui_ctx.set_visuals(visuals);
 
         let mut app = Self {
@@ -503,88 +504,147 @@ impl eframe::App for EditApp {
         }
 
         // Menu Bar Panel
-        egui::Panel::top("menu_bar").show_inside(ui, |ui| {
-            egui::containers::menu::MenuBar::new().ui(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("New File (Ctrl+N)").clicked() {
-                        self.new_untitled_tab();
-                        ui.close();
-                    }
-                    if ui.button("Open File... (Ctrl+O)").clicked() {
-                        self.open_file_dialog();
-                        ui.close();
-                    }
-                    ui.separator();
-                    if ui.button("Save (Ctrl+S)").clicked() {
-                        self.save_current_tab();
-                        ui.close();
-                    }
-                    if ui.button("Save As... (Ctrl+Shift+S)").clicked() {
-                        self.save_current_tab_as();
-                        ui.close();
-                    }
-                    ui.separator();
-                    if ui.button("Close Tab (Ctrl+W)").clicked() {
-                        self.close_tab(self.selected_tab_index);
-                        ui.close();
-                    }
-                    if ui.button("Exit (Ctrl+Q)").clicked() {
-                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
-                    }
-                });
+        egui::Panel::top("menu_bar")
+            .frame(egui::Frame::NONE
+                .fill(ui.style().visuals.window_fill)
+                .inner_margin(egui::Margin::symmetric(8, 2))
+                .corner_radius(egui::CornerRadius::ZERO)
+            )
+            .show_inside(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = 8.0;
 
-                ui.menu_button("Edit", |ui| {
-                    if ui.button("Find (Ctrl+F)").clicked() {
-                        self.search_open = true;
-                        self.search_focus_triggered = true;
-                        ui.close();
-                    }
-                    if ui.button("Replace (Ctrl+H)").clicked() {
-                        self.replace_open = true;
-                        self.search_open = true;
-                        self.search_focus_triggered = true;
-                        ui.close();
-                    }
-                });
+                    // Left-aligned menus
+                    egui::containers::menu::MenuBar::new().ui(ui, |ui| {
+                        ui.menu_button("File", |ui| {
+                            if ui.button("New File (Ctrl+N)").clicked() {
+                                self.new_untitled_tab();
+                                ui.close();
+                            }
+                            if ui.button("Open File... (Ctrl+O)").clicked() {
+                                self.open_file_dialog();
+                                ui.close();
+                            }
+                            ui.separator();
+                            if ui.button("Save (Ctrl+S)").clicked() {
+                                self.save_current_tab();
+                                ui.close();
+                            }
+                            if ui.button("Save As... (Ctrl+Shift+S)").clicked() {
+                                self.save_current_tab_as();
+                                ui.close();
+                            }
+                            ui.separator();
+                            if ui.button("Close Tab (Ctrl+W)").clicked() {
+                                self.close_tab(self.selected_tab_index);
+                                ui.close();
+                            }
+                            if ui.button("Exit (Ctrl+Q)").clicked() {
+                                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                            }
+                        });
 
-                ui.menu_button("View", |ui| {
-                    if ui.checkbox(&mut self.dark_mode, "Dark Mode").changed() {
-                        if self.dark_mode {
-                            ui.ctx().set_visuals(egui::Visuals::dark());
-                        } else {
-                            ui.ctx().set_visuals(egui::Visuals::light());
+                        ui.menu_button("Edit", |ui| {
+                            if ui.button("Find (Ctrl+F)").clicked() {
+                                self.search_open = true;
+                                self.search_focus_triggered = true;
+                                ui.close();
+                            }
+                            if ui.button("Replace (Ctrl+H)").clicked() {
+                                self.replace_open = true;
+                                self.search_open = true;
+                                self.search_focus_triggered = true;
+                                ui.close();
+                            }
+                        });
+
+                        ui.menu_button("View", |ui| {
+                            if ui.checkbox(&mut self.dark_mode, "Dark Mode").changed() {
+                                if self.dark_mode {
+                                    ui.ctx().set_visuals(egui::Visuals::dark());
+                                } else {
+                                    ui.ctx().set_visuals(egui::Visuals::light());
+                                }
+                            }
+                            ui.separator();
+                            if ui.button("Increase Font Size").clicked() {
+                                self.font_size += 1.0;
+                            }
+                            if ui.button("Decrease Font Size").clicked() {
+                                if self.font_size > 8.0 {
+                                    self.font_size -= 1.0;
+                                }
+                            }
+                            if ui.button("Reset Font Size").clicked() {
+                                self.font_size = 15.0;
+                            }
+                        });
+
+                        ui.menu_button("Help", |ui| {
+                            if ui.button("About").clicked() {
+                                self.show_about = true;
+                                ui.close();
+                            }
+                        });
+                    });
+
+                    // Draggable space in the middle to move the undecorated window.
+                    let available_rect = ui.available_rect_before_wrap();
+                    let drag_width = (available_rect.width() - 95.0).max(0.0);
+                    let (_drag_rect, drag_response) = ui.allocate_exact_size(
+                        egui::vec2(drag_width, available_rect.height()),
+                        egui::Sense::drag()
+                    );
+                    if drag_response.dragged() {
+                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
+                    }
+
+                    // Right-aligned window control buttons
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.spacing_mut().item_spacing.x = 2.0;
+
+                        // Close button (X)
+                        let close_btn = ui.add(
+                            egui::Button::new("X")
+                                .fill(egui::Color32::from_rgb(180, 50, 50))
+                                .corner_radius(egui::CornerRadius::ZERO)
+                        );
+                        if close_btn.clicked() {
+                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
                         }
-                    }
-                    ui.separator();
-                    if ui.button("Increase Font Size").clicked() {
-                        self.font_size += 1.0;
-                    }
-                    if ui.button("Decrease Font Size").clicked() {
-                        if self.font_size > 8.0 {
-                            self.font_size -= 1.0;
-                        }
-                    }
-                    if ui.button("Reset Font Size").clicked() {
-                        self.font_size = 15.0;
-                    }
-                });
 
-                ui.menu_button("Help", |ui| {
-                    if ui.button("About").clicked() {
-                        self.show_about = true;
-                        ui.close();
-                    }
+                        // Maximize/Restore button (+)
+                        let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
+                        let max_char = if is_maximized { "⧉" } else { "+" };
+                        let max_btn = ui.add(
+                            egui::Button::new(max_char)
+                                .fill(ui.style().visuals.widgets.inactive.bg_fill)
+                                .corner_radius(egui::CornerRadius::ZERO)
+                        );
+                        if max_btn.clicked() {
+                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!is_maximized));
+                        }
+
+                        // Minimize button (-)
+                        let min_btn = ui.add(
+                            egui::Button::new("-")
+                                .fill(ui.style().visuals.widgets.inactive.bg_fill)
+                                .corner_radius(egui::CornerRadius::ZERO)
+                        );
+                        if min_btn.clicked() {
+                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+                        }
+                    });
                 });
             });
-        });
 
         // Search Panel (if open)
         if self.search_open {
             egui::Panel::top("search_panel")
-                .frame(egui::Frame::window(ui.style())
-                    .fill(ui.global_style().visuals.window_fill)
-                    .inner_margin(egui::Margin::same(8))
-                    .corner_radius(egui::CornerRadius::same(4))
+                .frame(egui::Frame::NONE
+                    .fill(ui.style().visuals.window_fill)
+                    .inner_margin(egui::Margin::same(4))
+                    .corner_radius(egui::CornerRadius::ZERO)
                 )
                 .show_inside(ui, |ui| {
                     ui.horizontal(|ui| {
@@ -649,7 +709,13 @@ impl eframe::App for EditApp {
         }
 
         // Status Bar Panel (at the bottom)
-        egui::Panel::bottom("status_bar").show_inside(ui, |ui| {
+        egui::Panel::bottom("status_bar")
+            .frame(egui::Frame::NONE
+                .fill(ui.style().visuals.window_fill)
+                .inner_margin(egui::Margin::symmetric(8, 2))
+                .corner_radius(egui::CornerRadius::ZERO)
+            )
+            .show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 if !self.status_message.is_empty() {
                     ui.label(&self.status_message);
@@ -696,7 +762,13 @@ impl eframe::App for EditApp {
         });
 
         // Central Panel: Tabs + Editor
-        egui::CentralPanel::default().show_inside(ui, |ui| {
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE
+                .fill(ui.style().visuals.panel_fill)
+                .inner_margin(egui::Margin::ZERO)
+                .corner_radius(egui::CornerRadius::ZERO)
+            )
+            .show_inside(ui, |ui| {
             // Draw Tabs
             let mut tab_to_close = None;
             let mut tab_to_select = None;
@@ -741,8 +813,8 @@ impl eframe::App for EditApp {
                     egui::Frame::canvas(ui.style())
                         .fill(bg)
                         .stroke(egui::Stroke::new(1.0_f32, border_color))
-                        .corner_radius(egui::CornerRadius::same(6))
-                        .inner_margin(egui::Margin::symmetric(10, 6))
+                        .corner_radius(egui::CornerRadius::ZERO)
+                        .inner_margin(egui::Margin::symmetric(8, 4))
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 ui.spacing_mut().item_spacing.x = 6.0;
@@ -784,7 +856,7 @@ impl eframe::App for EditApp {
                 let add_btn = ui.add(
                     egui::Button::new("+")
                         .fill(if self.dark_mode { egui::Color32::from_rgb(32, 38, 48) } else { egui::Color32::from_rgb(220, 220, 225) })
-                        .corner_radius(egui::CornerRadius::same(6))
+                        .corner_radius(egui::CornerRadius::ZERO)
                 );
                 if add_btn.clicked() {
                     self.new_untitled_tab();
@@ -798,8 +870,6 @@ impl eframe::App for EditApp {
             if let Some(idx) = tab_to_close {
                 self.close_tab(idx);
             }
-
-            ui.add_space(6.0);
 
             // Editor Space
             if !self.tabs.is_empty() && self.selected_tab_index < self.tabs.len() {
@@ -825,21 +895,26 @@ impl eframe::App for EditApp {
                     )
                 };
 
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    let text_edit = egui::TextEdit::multiline(&mut content)
-                        .font(egui::FontId::monospace(font_size))
-                        .code_editor()
-                        .desired_width(f32::INFINITY)
-                        .desired_rows(30)
-                        .lock_focus(true)
-                        .layouter(&mut layouter)
-                        .id(egui::Id::new("editor_text_edit"));
-                    
-                    let response = ui.add(text_edit);
-                    if response.changed() {
-                        changed = true;
-                    }
-                });
+                let available_height = ui.available_height();
+                egui::ScrollArea::vertical()
+                    .max_width(f32::INFINITY)
+                    .max_height(f32::INFINITY)
+                    .show(ui, |ui| {
+                        let text_edit = egui::TextEdit::multiline(&mut content)
+                            .font(egui::FontId::monospace(font_size))
+                            .code_editor()
+                            .desired_width(f32::INFINITY)
+                            .desired_rows(1)
+                            .margin(egui::Margin::ZERO)
+                            .lock_focus(true)
+                            .layouter(&mut layouter)
+                            .id(egui::Id::new("editor_text_edit"));
+                        
+                        let response = ui.add_sized([ui.available_width(), available_height], text_edit);
+                        if response.changed() {
+                            changed = true;
+                        }
+                    });
 
                 // Put content back
                 self.tabs[self.selected_tab_index].content = content;
@@ -872,7 +947,7 @@ impl eframe::App for EditApp {
 
                         egui::Frame::canvas(ui.style())
                             .fill(gradient_bg)
-                            .corner_radius(egui::CornerRadius::same(8))
+                            .corner_radius(egui::CornerRadius::ZERO)
                             .inner_margin(egui::Margin::same(12))
                             .show(ui, |ui| {
                                 ui.label(
