@@ -495,6 +495,36 @@ impl eframe::App for EditApp {
 
                 ui.scope_builder(egui::UiBuilder::default().max_rect(menu_rect), |ui| {
                     ui.spacing_mut().button_padding = egui::vec2(8.0, 4.0);
+
+                    let dark_mode = ui.visuals().dark_mode;
+                    let (hover_bg, active_bg) = if dark_mode {
+                        (
+                            egui::Color32::from_rgba_unmultiplied(255, 255, 255, 12),
+                            egui::Color32::from_rgba_unmultiplied(255, 255, 255, 20),
+                        )
+                    } else {
+                        (
+                            egui::Color32::from_rgba_unmultiplied(0, 0, 0, 12),
+                            egui::Color32::from_rgba_unmultiplied(0, 0, 0, 20),
+                        )
+                    };
+
+                    ui.style_mut().visuals.widgets.inactive.bg_fill = egui::Color32::TRANSPARENT;
+                    ui.style_mut().visuals.widgets.inactive.weak_bg_fill = egui::Color32::TRANSPARENT;
+                    ui.style_mut().visuals.widgets.inactive.bg_stroke = egui::Stroke::NONE;
+
+                    ui.style_mut().visuals.widgets.hovered.bg_fill = hover_bg;
+                    ui.style_mut().visuals.widgets.hovered.weak_bg_fill = hover_bg;
+                    ui.style_mut().visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+
+                    ui.style_mut().visuals.widgets.active.bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.active.weak_bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.active.bg_stroke = egui::Stroke::NONE;
+
+                    ui.style_mut().visuals.widgets.open.bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.open.weak_bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.open.bg_stroke = egui::Stroke::NONE;
+
                     ui.horizontal(|ui| {
                         ui.menu_button("File", |ui| {
                             if ui.button("New File (Ctrl+N)").clicked() {
@@ -573,6 +603,35 @@ impl eframe::App for EditApp {
                 );
 
                 ui.scope_builder(egui::UiBuilder::default().max_rect(controls_rect), |ui| {
+                    let dark_mode = ui.visuals().dark_mode;
+                    let (hover_bg, active_bg) = if dark_mode {
+                        (
+                            egui::Color32::from_rgba_unmultiplied(255, 255, 255, 12),
+                            egui::Color32::from_rgba_unmultiplied(255, 255, 255, 20),
+                        )
+                    } else {
+                        (
+                            egui::Color32::from_rgba_unmultiplied(0, 0, 0, 12),
+                            egui::Color32::from_rgba_unmultiplied(0, 0, 0, 20),
+                        )
+                    };
+
+                    ui.style_mut().visuals.widgets.inactive.bg_fill = egui::Color32::TRANSPARENT;
+                    ui.style_mut().visuals.widgets.inactive.weak_bg_fill = egui::Color32::TRANSPARENT;
+                    ui.style_mut().visuals.widgets.inactive.bg_stroke = egui::Stroke::NONE;
+
+                    ui.style_mut().visuals.widgets.hovered.bg_fill = hover_bg;
+                    ui.style_mut().visuals.widgets.hovered.weak_bg_fill = hover_bg;
+                    ui.style_mut().visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+
+                    ui.style_mut().visuals.widgets.active.bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.active.weak_bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.active.bg_stroke = egui::Stroke::NONE;
+
+                    ui.style_mut().visuals.widgets.open.bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.open.weak_bg_fill = active_bg;
+                    ui.style_mut().visuals.widgets.open.bg_stroke = egui::Stroke::NONE;
+
                     ui.horizontal(|ui| {
                         ui.spacing_mut().item_spacing.x = 0.0;
                         let btn_size = egui::vec2(28.0, panel_rect.height());
