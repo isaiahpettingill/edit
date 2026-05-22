@@ -547,10 +547,10 @@ impl eframe::App for EditApp {
                     });
 
                     // 2. Drag area in the middle (taking remaining width minus space for controls)
-                    let controls_width = 80.0;
+                    let controls_width = 84.0;
                     let drag_width = (ui.available_width() - controls_width).max(0.0);
                     let (drag_rect, drag_response) = ui.allocate_exact_size(
-                        egui::vec2(drag_width, ui.available_height()),
+                        egui::vec2(drag_width, ui.spacing().interact_size.y),
                         egui::Sense::drag()
                     );
                     if drag_response.dragged() {
@@ -587,43 +587,41 @@ impl eframe::App for EditApp {
                     }
 
                     // 3. Right-aligned controls (minimize, maximize, close)
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 2.0;
-                        let btn_size = egui::vec2(24.0, 20.0);
+                    ui.spacing_mut().item_spacing.x = 2.0;
+                    let btn_size = egui::vec2(24.0, ui.spacing().interact_size.y);
 
-                        // Minimize button (-)
-                        let min_btn = ui.add_sized(
-                            btn_size,
-                            egui::Button::new("-")
-                                .corner_radius(egui::CornerRadius::ZERO)
-                        );
-                        if min_btn.clicked() {
-                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Minimized(true));
-                        }
+                    // Minimize button (-)
+                    let min_btn = ui.add_sized(
+                        btn_size,
+                        egui::Button::new("-")
+                            .corner_radius(egui::CornerRadius::ZERO)
+                    );
+                    if min_btn.clicked() {
+                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+                    }
 
-                        // Maximize/Restore button (+)
-                        let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
-                        let max_char = if is_maximized { "⧉" } else { "+" };
-                        let max_btn = ui.add_sized(
-                            btn_size,
-                            egui::Button::new(max_char)
-                                .corner_radius(egui::CornerRadius::ZERO)
-                        );
-                        if max_btn.clicked() {
-                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!is_maximized));
-                        }
+                    // Maximize/Restore button (+)
+                    let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
+                    let max_char = if is_maximized { "⧉" } else { "+" };
+                    let max_btn = ui.add_sized(
+                        btn_size,
+                        egui::Button::new(max_char)
+                            .corner_radius(egui::CornerRadius::ZERO)
+                    );
+                    if max_btn.clicked() {
+                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!is_maximized));
+                    }
 
-                        // Close button (X)
-                        let close_btn = ui.add_sized(
-                            btn_size,
-                            egui::Button::new("X")
-                                .fill(egui::Color32::from_rgb(180, 50, 50))
-                                .corner_radius(egui::CornerRadius::ZERO)
-                        );
-                        if close_btn.clicked() {
-                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
-                        }
-                    });
+                    // Close button (X)
+                    let close_btn = ui.add_sized(
+                        btn_size,
+                        egui::Button::new("X")
+                            .fill(egui::Color32::from_rgb(180, 50, 50))
+                            .corner_radius(egui::CornerRadius::ZERO)
+                    );
+                    if close_btn.clicked() {
+                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
                 });
             });
 

@@ -91,7 +91,7 @@ extends:
               ob_createvpack_vpackdirectory: "$(ob_outputDirectory)/vpack"
               ob_createvpack_packagename: "windows_edit.$(Build.SourceBranchName)"
               ob_createvpack_owneralias: lhecker@microsoft.com
-              ob_createvpack_description: Microsoft Edit
+              ob_createvpack_description: Edit
               ob_createvpack_targetDestinationDirectory: "$(Destination)"
               ob_createvpack_propsFile: false
               ob_createvpack_provData: true

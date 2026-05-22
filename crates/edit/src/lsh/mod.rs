@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-//! Microsoft Edit's adapter to LSH.
+//! Edit's adapter to LSH.
 
 pub mod cache;
 mod definitions;
