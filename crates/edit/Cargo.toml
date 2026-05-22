@@ -21,6 +21,9 @@ debug-latency = []
 [dependencies]
 lsh.workspace = true
 stdext.workspace = true
+egui = "0.34.2"
+eframe = "0.34.2"
+rfd = "0.17.2"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
