@@ -31,6 +31,213 @@ pub struct EditApp {
     pub show_about: bool,
 }
 
+fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
+    let mut emoji_fonts = Vec::new();
+    let mut cjk_fonts = Vec::new();
+    let mut general_fonts = Vec::new();
+
+    // 1. Fast path: check known hardcoded system paths
+    let hardcoded_paths = [
+        // Windows
+        ("C:\\Windows\\Fonts\\msyh.ttc", "cjk"),
+        ("C:\\Windows\\Fonts\\msgothic.ttc", "cjk"),
+        ("C:\\Windows\\Fonts\\seguiemj.ttf", "emoji"),
+        ("C:\\Windows\\Fonts\\arial.ttf", "general"),
+        // macOS
+        ("/System/Library/Fonts/PingFang.ttc", "cjk"),
+        ("/System/Library/Fonts/Apple Color Emoji.ttf", "emoji"),
+        ("/Library/Fonts/Arial Unicode.ttf", "general"),
+        // Linux / WSL
+        ("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", "cjk"),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "cjk"),
+        ("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", "cjk"),
+        ("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf", "emoji"),
+        ("/usr/share/fonts/noto-emoji/NotoColorEmoji.ttf", "emoji"),
+        ("/usr/share/fonts/truetype/droid/DroidSansFallback.ttf", "cjk"),
+        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "general"),
+        ("/usr/share/ghostscript/10.07.0/Resource/CIDFSubst/DroidSansFallback.ttf", "cjk"),
+        ("/mnt/c/Windows/Fonts/msyh.ttc", "cjk"),
+        ("/mnt/c/Windows/Fonts/seguiemj.ttf", "emoji"),
+        ("/mnt/c/Windows/Fonts/NotoColorEmoji_WindowsCompatible.ttf", "emoji"),
+        ("/mnt/c/Windows/Fonts/arial.ttf", "general"),
+    ];
+
+    for &(path, category) in &hardcoded_paths {
+        let path_buf = std::path::PathBuf::from(path);
+        if path_buf.exists() {
+            match category {
+                "emoji" => {
+                    if emoji_fonts.len() < 2 && !emoji_fonts.contains(&path_buf) {
+                        emoji_fonts.push(path_buf);
+                    }
+                }
+                "cjk" => {
+                    if cjk_fonts.len() < 2 && !cjk_fonts.contains(&path_buf) {
+                        cjk_fonts.push(path_buf);
+                    }
+                }
+                "general" => {
+                    if general_fonts.len() < 2 && !general_fonts.contains(&path_buf) {
+                        general_fonts.push(path_buf);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    // Helper to resolve HOME
+    let expand_home = |path: &str| -> Option<PathBuf> {
+        if path.starts_with("~/") || path == "~" {
+            let home = if cfg!(windows) {
+                std::env::var("USERPROFILE").ok()
+            } else {
+                std::env::var("HOME").ok()
+            };
+            if let Some(home_path) = home {
+                let mut buf = PathBuf::from(home_path);
+                if path.len() > 2 {
+                    buf.push(&path[2..]);
+                }
+                return Some(buf);
+            }
+        }
+        None
+    };
+
+    // 2. Slow path/Deep search: scan font directories if we still lack fonts
+    if emoji_fonts.len() < 2 || cjk_fonts.len() < 2 || general_fonts.len() < 2 {
+        let mut dirs_to_scan = Vec::new();
+
+        if cfg!(windows) {
+            if let Ok(windir) = std::env::var("WINDIR") {
+                dirs_to_scan.push(PathBuf::from(windir).join("Fonts"));
+            } else if let Ok(sysroot) = std::env::var("SYSTEMROOT") {
+                dirs_to_scan.push(PathBuf::from(sysroot).join("Fonts"));
+            } else {
+                dirs_to_scan.push(PathBuf::from("C:\\Windows\\Fonts"));
+            }
+            if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+                dirs_to_scan.push(PathBuf::from(localappdata).join("Microsoft\\Windows\\Fonts"));
+            }
+        } else {
+            // macOS
+            dirs_to_scan.push(PathBuf::from("/System/Library/Fonts"));
+            dirs_to_scan.push(PathBuf::from("/Library/Fonts"));
+            if let Some(home_fonts) = expand_home("~/Library/Fonts") {
+                dirs_to_scan.push(home_fonts);
+            }
+
+            // Linux
+            dirs_to_scan.push(PathBuf::from("/usr/share/fonts"));
+            dirs_to_scan.push(PathBuf::from("/usr/local/share/fonts"));
+            if let Some(home_fonts) = expand_home("~/.local/share/fonts") {
+                dirs_to_scan.push(home_fonts);
+            }
+            if let Some(home_fonts) = expand_home("~/.fonts") {
+                dirs_to_scan.push(home_fonts);
+            }
+
+            // WSL Windows Fonts Mount
+            dirs_to_scan.push(PathBuf::from("/mnt/c/Windows/Fonts"));
+        }
+
+        // Recursive directory scanning helper
+        fn scan_dir_for_fonts(
+            dir: &std::path::Path,
+            depth: usize,
+            emoji_fonts: &mut Vec<PathBuf>,
+            cjk_fonts: &mut Vec<PathBuf>,
+            general_fonts: &mut Vec<PathBuf>,
+        ) {
+            if depth > 4 {
+                return;
+            }
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.is_dir() {
+                        if let Ok(metadata) = entry.metadata() {
+                            if !metadata.is_symlink() {
+                                scan_dir_for_fonts(&path, depth + 1, emoji_fonts, cjk_fonts, general_fonts);
+                            }
+                        }
+                    } else if path.is_file() {
+                        if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                            let ext_lower = ext.to_lowercase();
+                            if ext_lower == "ttf" || ext_lower == "ttc" || ext_lower == "otf" {
+                                if let Some(filename) = path.file_name().and_then(|s| s.to_str()) {
+                                    let name_lower = filename.to_lowercase();
+                                    
+                                    if name_lower.contains("emoji") || name_lower.contains("seguiemj") {
+                                        if emoji_fonts.len() < 2 && !emoji_fonts.contains(&path) {
+                                            emoji_fonts.push(path.clone());
+                                        }
+                                    } else if name_lower.contains("cjk") || name_lower.contains("wqy") 
+                                        || name_lower.contains("msyh") || name_lower.contains("pingfang") 
+                                        || name_lower.contains("droidsansfallback") || name_lower.contains("yahei") 
+                                        || name_lower.contains("msgothic") 
+                                    {
+                                        if cjk_fonts.len() < 2 && !cjk_fonts.contains(&path) {
+                                            cjk_fonts.push(path.clone());
+                                        }
+                                    } else if name_lower.contains("dejavu") || name_lower.contains("liberation") 
+                                        || name_lower.contains("freesans") || name_lower.contains("arial") 
+                                        || name_lower.contains("ubuntu") || name_lower.contains("notosans") 
+                                        || name_lower.contains("notoserif") || name_lower.contains("roboto")
+                                    {
+                                        if general_fonts.len() < 2 && !general_fonts.contains(&path) {
+                                            general_fonts.push(path.clone());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if emoji_fonts.len() >= 2 && cjk_fonts.len() >= 2 && general_fonts.len() >= 2 {
+                        break;
+                    }
+                }
+            }
+        }
+
+        for dir in dirs_to_scan {
+            if dir.exists() {
+                scan_dir_for_fonts(&dir, 0, &mut emoji_fonts, &mut cjk_fonts, &mut general_fonts);
+            }
+            if emoji_fonts.len() >= 2 && cjk_fonts.len() >= 2 && general_fonts.len() >= 2 {
+                break;
+            }
+        }
+    }
+
+    // 3. Load all selected fallback fonts into Egui
+    let mut loaded_count = 0;
+    let all_fallbacks = emoji_fonts.into_iter()
+        .chain(cjk_fonts.into_iter())
+        .chain(general_fonts.into_iter());
+
+    for path in all_fallbacks {
+        if let Ok(bytes) = std::fs::read(&path) {
+            let name = format!("sys_fallback_{}", loaded_count);
+            fonts.font_data.insert(
+                name.clone(),
+                std::sync::Arc::new(egui::FontData::from_owned(bytes)),
+            );
+
+            fonts.families
+                .entry(egui::FontFamily::Proportional)
+                .or_default()
+                .push(name.clone());
+            fonts.families
+                .entry(egui::FontFamily::Monospace)
+                .or_default()
+                .push(name);
+            loaded_count += 1;
+        }
+    }
+}
+
 fn setup_custom_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
 
@@ -42,13 +249,18 @@ fn setup_custom_fonts(ctx: &egui::Context) {
         ))),
     );
 
+    // Load available system fallback fonts for CJK, Emoji, and Unicode coverage
+    load_system_fallbacks(&mut fonts);
+
     // Put it first for both Proportional and Monospace families
-    if let Some(vec) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
-        vec.insert(0, "neospleen".to_owned());
-    }
-    if let Some(vec) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
-        vec.insert(0, "neospleen".to_owned());
-    }
+    fonts.families
+        .entry(egui::FontFamily::Proportional)
+        .or_default()
+        .insert(0, "neospleen".to_owned());
+    fonts.families
+        .entry(egui::FontFamily::Monospace)
+        .or_default()
+        .insert(0, "neospleen".to_owned());
 
     ctx.set_fonts(fonts);
 }
