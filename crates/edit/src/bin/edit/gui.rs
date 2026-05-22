@@ -31,6 +31,42 @@ pub struct EditApp {
     pub show_about: bool,
 }
 
+fn setup_custom_fonts(ctx: &egui::Context) {
+    let mut fonts = egui::FontDefinitions::default();
+
+    // Embed the NeoSpleen Nerd Font from our assets
+    fonts.font_data.insert(
+        "neospleen".to_owned(),
+        std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
+            "../../../../../assets/NeoSpleen-NerdFont.ttf"
+        ))),
+    );
+
+    // Put it first for both Proportional and Monospace families
+    if let Some(vec) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
+        vec.insert(0, "neospleen".to_owned());
+    }
+    if let Some(vec) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
+        vec.insert(0, "neospleen".to_owned());
+    }
+
+    ctx.set_fonts(fonts);
+}
+
+fn update_font_sizes(ctx: &egui::Context, base_size: f32) {
+    let mut style = (*ctx.global_style()).clone();
+
+    style.text_styles = [
+        (egui::TextStyle::Small, egui::FontId::new(base_size * 0.8, egui::FontFamily::Proportional)),
+        (egui::TextStyle::Body, egui::FontId::new(base_size * 1.0, egui::FontFamily::Proportional)),
+        (egui::TextStyle::Button, egui::FontId::new(base_size * 1.0, egui::FontFamily::Proportional)),
+        (egui::TextStyle::Heading, egui::FontId::new(base_size * 1.4, egui::FontFamily::Proportional)),
+        (egui::TextStyle::Monospace, egui::FontId::new(base_size, egui::FontFamily::Monospace)),
+    ].into();
+
+    ctx.set_global_style(style);
+}
+
 fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
     let mut visuals = if dark_mode {
         let mut vis = egui::Visuals::dark();
@@ -76,6 +112,8 @@ impl EditApp {
     pub fn new(cc: &eframe::CreationContext<'_>, initial_paths: Vec<PathBuf>) -> Self {
         // Apply our curated premium theme style
         apply_theme(&cc.egui_ctx, true);
+        setup_custom_fonts(&cc.egui_ctx);
+        update_font_sizes(&cc.egui_ctx, 15.0);
 
         let mut app = Self {
             path: None,
@@ -423,6 +461,8 @@ fn highlight_layouter(
 
 impl eframe::App for EditApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let mut font_changed = false;
+
         // Manage status bar timer
         if let Some(time) = self.status_time {
             if time.elapsed() > Duration::from_secs(4) {
@@ -463,6 +503,22 @@ impl eframe::App for EditApp {
         }
         if ui.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Q)) {
             ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+
+        if ui.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Plus))
+            || ui.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Equals)) {
+            self.font_size += 1.0;
+            font_changed = true;
+        }
+        if ui.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Minus)) {
+            if self.font_size > 8.0 {
+                self.font_size -= 1.0;
+                font_changed = true;
+            }
+        }
+        if ui.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Num0)) {
+            self.font_size = 15.0;
+            font_changed = true;
         }
 
         // Menu Bar Panel (integrated undecorated title bar controls + drag region)
@@ -571,18 +627,22 @@ impl eframe::App for EditApp {
                         ui.menu_button("View", |ui| {
                             if ui.checkbox(&mut self.dark_mode, "Dark Mode").changed() {
                                 apply_theme(ui.ctx(), self.dark_mode);
+                                update_font_sizes(ui.ctx(), self.font_size);
                             }
                             ui.separator();
-                            if ui.button("Increase Font Size").clicked() {
+                            if ui.button("Increase Font Size (Ctrl++)").clicked() {
                                 self.font_size += 1.0;
+                                font_changed = true;
                             }
-                            if ui.button("Decrease Font Size").clicked() {
+                            if ui.button("Decrease Font Size (Ctrl+-)").clicked() {
                                 if self.font_size > 8.0 {
                                      self.font_size -= 1.0;
+                                     font_changed = true;
                                 }
                             }
-                            if ui.button("Reset Font Size").clicked() {
+                            if ui.button("Reset Font Size (Ctrl+0)").clicked() {
                                 self.font_size = 15.0;
+                                font_changed = true;
                             }
                         });
 
@@ -832,6 +892,10 @@ impl eframe::App for EditApp {
                     });
                 });
             });
+
+        if font_changed {
+            update_font_sizes(ui.ctx(), self.font_size);
+        }
 
         // Central Panel: Editor Space
         egui::CentralPanel::default()
