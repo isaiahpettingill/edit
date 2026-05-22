@@ -70,17 +70,20 @@ fn update_font_sizes(ctx: &egui::Context, base_size: f32) {
 fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
     let mut visuals = if dark_mode {
         let mut vis = egui::Visuals::dark();
-        vis.panel_fill = egui::Color32::from_rgb(18, 20, 24); // deep rich slate
-        vis.window_fill = egui::Color32::from_rgb(26, 29, 36);
-        vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(26, 29, 36);
-        vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(32, 38, 48);
-        vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(52, 64, 84); // steel blue/slate hovered
-        vis.widgets.hovered.fg_stroke.color = egui::Color32::WHITE;
-        vis.widgets.active.bg_fill = egui::Color32::from_rgb(70, 84, 108); // steel active
+        // Soft dark gray similar to Catppuccin Macchiato/Mocha without purple
+        vis.panel_fill = egui::Color32::from_rgb(30, 30, 40); // Base: soft charcoal
+        vis.window_fill = egui::Color32::from_rgb(20, 20, 27); // Crust/Mantle: soft dark gray
+        vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(30, 30, 40);
+        vis.widgets.noninteractive.fg_stroke.color = egui::Color32::from_rgb(205, 214, 244); // Text: ash / very light gray
+        vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(45, 45, 56); // Surface0: slightly lighter gray
+        vis.widgets.inactive.fg_stroke.color = egui::Color32::from_rgb(205, 214, 244);
+        vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(60, 60, 75); // Surface1: hovered gray
+        vis.widgets.hovered.fg_stroke.color = egui::Color32::from_rgb(240, 240, 245);
+        vis.widgets.active.bg_fill = egui::Color32::from_rgb(75, 75, 95); // Surface2: active gray
         vis.widgets.active.fg_stroke.color = egui::Color32::WHITE;
-        vis.selection.bg_fill = egui::Color32::from_rgb(45, 66, 99); // steel-slate selection
-        vis.selection.stroke = egui::Stroke::new(1.5_f32, egui::Color32::from_rgb(100, 149, 237));
-        vis.hyperlink_color = egui::Color32::from_rgb(80, 150, 200);
+        vis.selection.bg_fill = egui::Color32::from_rgb(58, 76, 100); // Selection: soft blue-slate (no purple)
+        vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(137, 180, 250)); // Soft blue highlight
+        vis.hyperlink_color = egui::Color32::from_rgb(137, 220, 235); // Sky blue
         vis
     } else {
         let mut vis = egui::Visuals::light();
@@ -93,7 +96,7 @@ fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
         vis.widgets.active.bg_fill = egui::Color32::from_rgb(160, 175, 195); // active steel
         vis.widgets.active.fg_stroke.color = egui::Color32::BLACK;
         vis.selection.bg_fill = egui::Color32::from_rgb(180, 205, 230); // light steel selection
-        vis.selection.stroke = egui::Stroke::new(1.5_f32, egui::Color32::from_rgb(70, 120, 180));
+        vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(70, 120, 180));
         vis.hyperlink_color = egui::Color32::from_rgb(40, 100, 160);
         vis
     };
@@ -110,10 +113,26 @@ fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
 
 impl EditApp {
     pub fn new(cc: &eframe::CreationContext<'_>, initial_paths: Vec<PathBuf>) -> Self {
+        let mut font_size = 16.0;
+        let mut dark_mode = true;
+
+        if let Some(storage) = cc.storage {
+            if let Some(fs_str) = storage.get_string("font_size") {
+                if let Ok(fs) = fs_str.parse::<f32>() {
+                    font_size = fs;
+                }
+            }
+            if let Some(dm_str) = storage.get_string("dark_mode") {
+                if let Ok(dm) = dm_str.parse::<bool>() {
+                    dark_mode = dm;
+                }
+            }
+        }
+
         // Apply our curated premium theme style
-        apply_theme(&cc.egui_ctx, true);
+        apply_theme(&cc.egui_ctx, dark_mode);
         setup_custom_fonts(&cc.egui_ctx);
-        update_font_sizes(&cc.egui_ctx, 15.0);
+        update_font_sizes(&cc.egui_ctx, font_size);
 
         let mut app = Self {
             path: None,
@@ -130,8 +149,8 @@ impl EditApp {
             search_focus_triggered: false,
             status_message: "Welcome to Edit!".to_string(),
             status_time: Some(Instant::now()),
-            font_size: 15.0,
-            dark_mode: true,
+            font_size,
+            dark_mode,
             show_about: false,
         };
 
@@ -403,7 +422,7 @@ fn highlight_layouter(
     job.wrap.max_width = wrap_width;
 
     let default_font = egui::FontId::monospace(font_size);
-    let default_color = Color32::from_rgb(220, 220, 220); // soft white
+    let default_color = ui.style().visuals.widgets.noninteractive.text_color();
 
     let default_format = TextFormat {
         font_id: default_font.clone(),
@@ -460,6 +479,11 @@ fn highlight_layouter(
 }
 
 impl eframe::App for EditApp {
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        storage.set_string("font_size", self.font_size.to_string());
+        storage.set_string("dark_mode", self.dark_mode.to_string());
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let mut font_changed = false;
 
@@ -517,7 +541,7 @@ impl eframe::App for EditApp {
             }
         }
         if ui.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Num0)) {
-            self.font_size = 15.0;
+            self.font_size = 16.0;
             font_changed = true;
         }
 
@@ -641,7 +665,7 @@ impl eframe::App for EditApp {
                                 }
                             }
                             if ui.button("Reset Font Size (Ctrl+0)").clicked() {
-                                self.font_size = 15.0;
+                                self.font_size = 16.0;
                                 font_changed = true;
                             }
                         });
