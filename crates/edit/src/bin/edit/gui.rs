@@ -469,15 +469,33 @@ impl eframe::App for EditApp {
         egui::Panel::top("menu_bar")
             .frame(egui::Frame::NONE
                 .fill(ui.style().visuals.window_fill)
-                .inner_margin(egui::Margin::symmetric(8, 4))
+                .inner_margin(egui::Margin::symmetric(0, 0))
                 .corner_radius(egui::CornerRadius::ZERO)
             )
             .show_inside(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 8.0;
+                let panel_height = 28.0;
+                let (panel_rect, _response) = ui.allocate_at_least(egui::vec2(ui.available_width(), panel_height), egui::Sense::hover());
 
-                    // 1. Left-aligned menus
-                    egui::containers::menu::MenuBar::new().ui(ui, |ui| {
+                // 1. Background drag interaction (drawn first, so it is in the background)
+                let drag_response = ui.interact(panel_rect, ui.id().with("panel_drag"), egui::Sense::click_and_drag());
+                if drag_response.dragged() {
+                    ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
+                }
+                if drag_response.double_clicked() {
+                    let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
+                    ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!is_maximized));
+                }
+
+                // 2. Menu buttons on the left (offset by 8.0px horizontal margin for clean alignment)
+                let menu_width = (panel_rect.width() - 100.0).max(0.0);
+                let menu_rect = egui::Rect::from_min_max(
+                    egui::pos2(panel_rect.min.x + 8.0, panel_rect.min.y),
+                    egui::pos2(panel_rect.min.x + 8.0 + menu_width, panel_rect.max.y)
+                );
+
+                ui.scope_builder(egui::UiBuilder::default().max_rect(menu_rect), |ui| {
+                    ui.spacing_mut().button_padding = egui::vec2(8.0, 4.0);
+                    ui.horizontal(|ui| {
                         ui.menu_button("File", |ui| {
                             if ui.button("New File (Ctrl+N)").clicked() {
                                 self.new_untitled_document();
@@ -530,7 +548,7 @@ impl eframe::App for EditApp {
                             }
                             if ui.button("Decrease Font Size").clicked() {
                                 if self.font_size > 8.0 {
-                                    self.font_size -= 1.0;
+                                     self.font_size -= 1.0;
                                 }
                             }
                             if ui.button("Reset Font Size").clicked() {
@@ -545,84 +563,83 @@ impl eframe::App for EditApp {
                             }
                         });
                     });
-
-                    // 2. Drag area in the middle (taking remaining width minus space for controls)
-                    let controls_width = 84.0;
-                    let drag_width = (ui.available_width() - controls_width).max(0.0);
-                    let (drag_rect, drag_response) = ui.allocate_exact_size(
-                        egui::vec2(drag_width, ui.spacing().interact_size.y),
-                        egui::Sense::drag()
-                    );
-                    if drag_response.dragged() {
-                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
-                    }
-                    if drag_response.double_clicked() {
-                        let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
-                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!is_maximized));
-                    }
-
-                    // Paint the file name centered in the drag area
-                    if drag_rect.width() > 150.0 {
-                        let title_text = if let Some(path) = &self.path {
-                            path.file_name().unwrap_or_default().to_string_lossy().into_owned()
-                        } else {
-                            self.name.clone()
-                        };
-                        let name_with_dirty = if self.is_dirty() {
-                            format!("{}*", title_text)
-                        } else {
-                            title_text
-                        };
-
-                        let painter = ui.painter();
-                        let font_id = egui::FontId::proportional(14.0);
-                        let text_color = ui.style().visuals.widgets.noninteractive.text_color();
-                        painter.text(
-                            drag_rect.center(),
-                            egui::Align2::CENTER_CENTER,
-                            name_with_dirty,
-                            font_id,
-                            text_color
-                        );
-                    }
-
-                    // 3. Right-aligned controls (minimize, maximize, close)
-                    ui.spacing_mut().item_spacing.x = 2.0;
-                    let btn_size = egui::vec2(24.0, ui.spacing().interact_size.y);
-
-                    // Minimize button (-)
-                    let min_btn = ui.add_sized(
-                        btn_size,
-                        egui::Button::new("-")
-                            .corner_radius(egui::CornerRadius::ZERO)
-                    );
-                    if min_btn.clicked() {
-                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Minimized(true));
-                    }
-
-                    // Maximize/Restore button (+)
-                    let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
-                    let max_char = if is_maximized { "⧉" } else { "+" };
-                    let max_btn = ui.add_sized(
-                        btn_size,
-                        egui::Button::new(max_char)
-                            .corner_radius(egui::CornerRadius::ZERO)
-                    );
-                    if max_btn.clicked() {
-                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!is_maximized));
-                    }
-
-                    // Close button (X)
-                    let close_btn = ui.add_sized(
-                        btn_size,
-                        egui::Button::new("X")
-                            .fill(egui::Color32::from_rgb(180, 50, 50))
-                            .corner_radius(egui::CornerRadius::ZERO)
-                    );
-                    if close_btn.clicked() {
-                        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
-                    }
                 });
+
+                // 3. Window control buttons on the far right (. +/- X)
+                let controls_width = 84.0; // 3 buttons * 28.0px
+                let controls_rect = egui::Rect::from_min_max(
+                    egui::pos2(panel_rect.max.x - controls_width, panel_rect.min.y),
+                    panel_rect.max
+                );
+
+                ui.scope_builder(egui::UiBuilder::default().max_rect(controls_rect), |ui| {
+                    ui.horizontal(|ui| {
+                        ui.spacing_mut().item_spacing.x = 0.0;
+                        let btn_size = egui::vec2(28.0, panel_rect.height());
+
+                        // Minimize button (.)
+                        let min_btn = egui::Button::new(".")
+                            .frame(false)
+                            .corner_radius(egui::CornerRadius::ZERO);
+                        let min_resp = ui.add_sized(btn_size, min_btn);
+                        if min_resp.clicked() {
+                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+                        }
+
+                        // Maximize button (+ when window normal, - when window maximized)
+                        let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
+                        let max_char = if is_maximized { "-" } else { "+" };
+                        let max_btn = egui::Button::new(max_char)
+                            .frame(false)
+                            .corner_radius(egui::CornerRadius::ZERO);
+                        let max_resp = ui.add_sized(btn_size, max_btn);
+                        if max_resp.clicked() {
+                            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!is_maximized));
+                        }
+
+                        // Close button (X) with custom hover red style
+                        let mut close_style = ui.style().as_ref().clone();
+                        close_style.visuals.widgets.hovered.bg_fill = egui::Color32::from_rgb(180, 50, 50);
+                        close_style.visuals.widgets.hovered.fg_stroke.color = egui::Color32::WHITE;
+                        close_style.visuals.widgets.active.bg_fill = egui::Color32::from_rgb(140, 30, 30);
+                        close_style.visuals.widgets.active.fg_stroke.color = egui::Color32::WHITE;
+
+                        ui.scope_builder(egui::UiBuilder::default().max_rect(ui.available_rect_before_wrap()).style(std::sync::Arc::new(close_style)), |ui| {
+                            let close_btn = egui::Button::new("X")
+                                .frame(false)
+                                .corner_radius(egui::CornerRadius::ZERO);
+                            let close_resp = ui.add_sized(btn_size, close_btn);
+                            if close_resp.clicked() {
+                                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                            }
+                        });
+                    });
+                });
+
+                // 4. Center-aligned title text
+                if panel_rect.width() > 250.0 {
+                    let title_text = if let Some(path) = &self.path {
+                        path.file_name().unwrap_or_default().to_string_lossy().into_owned()
+                    } else {
+                        self.name.clone()
+                    };
+                    let name_with_dirty = if self.is_dirty() {
+                        format!("{}*", title_text)
+                    } else {
+                        title_text
+                    };
+
+                    let painter = ui.painter();
+                    let font_id = egui::FontId::proportional(14.0);
+                    let text_color = ui.style().visuals.widgets.noninteractive.text_color();
+                    painter.text(
+                        panel_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        name_with_dirty,
+                        font_id,
+                        text_color
+                    );
+                }
             });
 
         // Search Panel (if open)
