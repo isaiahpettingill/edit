@@ -134,7 +134,7 @@ fn configure_windows_binary(target_os: TargetOs) {
         return;
     }
 
-    let manifest_path = "src/bin/edit/edit.exe.manifest";
+    let manifest_path = "src/bin/chedit/chedit.exe.manifest";
     let icon_path = "../../assets/edit.ico";
 
     winresource::WindowsResource::new()

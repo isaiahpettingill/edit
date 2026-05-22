@@ -10,7 +10,7 @@ cargo-fuzz = true
 [workspace]
 
 [dependencies]
-edit = { path = "../crates/edit" }
+chedit = { path = "../crates/edit" }
 stdext = { path = "../crates/stdext" }
 libfuzzer-sys = "0.4"
 

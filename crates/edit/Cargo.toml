@@ -1,5 +1,5 @@
 [package]
-name = "edit"
+name = "chedit"
 version = "2.0.0"
 
 edition.workspace = true
@@ -24,6 +24,7 @@ stdext.workspace = true
 egui = "0.34.2"
 eframe = { version = "0.34.2", features = ["persistence"] }
 rfd = "0.17.2"
+ttf-parser = "0.25.1"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

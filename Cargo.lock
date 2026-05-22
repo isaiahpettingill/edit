@@ -667,6 +667,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "chedit"
+version = "2.0.0"
+dependencies = [
+ "criterion",
+ "eframe",
+ "egui",
+ "libc",
+ "lsh",
+ "rfd",
+ "stdext",
+ "toml-span",
+ "ttf-parser",
+ "windows-sys 0.61.2",
+ "winresource",
+ "zstd",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -978,23 +996,6 @@ dependencies = [
  "bytemuck",
  "emath",
  "serde",
-]
-
-[[package]]
-name = "edit"
-version = "2.0.0"
-dependencies = [
- "criterion",
- "eframe",
- "egui",
- "libc",
- "lsh",
- "rfd",
- "stdext",
- "toml-span",
- "windows-sys 0.61.2",
- "winresource",
- "zstd",
 ]
 
 [[package]]

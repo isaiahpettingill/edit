@@ -33,7 +33,7 @@ fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title("Edit")
+            .with_title("Chedit")
             .with_inner_size([900.0, 650.0])
             .with_min_inner_size([400.0, 300.0])
             .with_decorations(false),
@@ -41,7 +41,7 @@ fn main() -> eframe::Result<()> {
     };
 
     eframe::run_native(
-        "Edit",
+        "Chedit",
         native_options,
         Box::new(|cc| {
             Ok(Box::new(gui::EditApp::new(cc, initial_paths)))
@@ -51,7 +51,7 @@ fn main() -> eframe::Result<()> {
 
 fn print_help() {
     println!(concat!(
-        "Usage: edit [OPTIONS] [FILE]\n",
+        "Usage: chedit [OPTIONS] [FILE]\n",
         "Options:\n",
         "    -h, --help       Print this help message\n",
         "    -v, --version    Print the version number\n",
@@ -62,5 +62,5 @@ fn print_help() {
 }
 
 fn print_version() {
-    println!(concat!("edit version ", env!("CARGO_PKG_VERSION")));
+    println!(concat!("chedit version ", env!("CARGO_PKG_VERSION")));
 }

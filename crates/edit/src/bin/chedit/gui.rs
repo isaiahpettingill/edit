@@ -31,7 +31,8 @@ pub struct EditApp {
     pub show_about: bool,
 }
 
-fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
+fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) -> (Vec<String>, Vec<String>) {
+    let mut nerd_fonts = Vec::new();
     let mut emoji_fonts = Vec::new();
     let mut cjk_fonts = Vec::new();
     let mut general_fonts = Vec::new();
@@ -106,7 +107,7 @@ fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
     };
 
     // 2. Slow path/Deep search: scan font directories if we still lack fonts
-    if emoji_fonts.len() < 2 || cjk_fonts.len() < 2 || general_fonts.len() < 2 {
+    if nerd_fonts.len() < 5 || emoji_fonts.len() < 2 || cjk_fonts.len() < 2 || general_fonts.len() < 2 {
         let mut dirs_to_scan = Vec::new();
 
         if cfg!(windows) {
@@ -140,12 +141,26 @@ fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
 
             // WSL Windows Fonts Mount
             dirs_to_scan.push(PathBuf::from("/mnt/c/Windows/Fonts"));
+
+            // WSL Windows User Fonts Mount (AppData of all users)
+            if let Ok(entries) = std::fs::read_dir("/mnt/c/Users") {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.is_dir() {
+                        let fonts_dir = path.join("AppData/Local/Microsoft/Windows/Fonts");
+                        if fonts_dir.exists() {
+                            dirs_to_scan.push(fonts_dir);
+                        }
+                    }
+                }
+            }
         }
 
         // Recursive directory scanning helper
         fn scan_dir_for_fonts(
             dir: &std::path::Path,
             depth: usize,
+            nerd_fonts: &mut Vec<PathBuf>,
             emoji_fonts: &mut Vec<PathBuf>,
             cjk_fonts: &mut Vec<PathBuf>,
             general_fonts: &mut Vec<PathBuf>,
@@ -159,7 +174,7 @@ fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
                     if path.is_dir() {
                         if let Ok(metadata) = entry.metadata() {
                             if !metadata.is_symlink() {
-                                scan_dir_for_fonts(&path, depth + 1, emoji_fonts, cjk_fonts, general_fonts);
+                                scan_dir_for_fonts(&path, depth + 1, nerd_fonts, emoji_fonts, cjk_fonts, general_fonts);
                             }
                         }
                     } else if path.is_file() {
@@ -169,7 +184,11 @@ fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
                                 if let Some(filename) = path.file_name().and_then(|s| s.to_str()) {
                                     let name_lower = filename.to_lowercase();
                                     
-                                    if name_lower.contains("emoji") || name_lower.contains("seguiemj") {
+                                    if name_lower.contains("nerd") || name_lower.contains("spleen") {
+                                        if nerd_fonts.len() < 5 && !nerd_fonts.contains(&path) {
+                                            nerd_fonts.push(path.clone());
+                                        }
+                                    } else if name_lower.contains("emoji") || name_lower.contains("seguiemj") {
                                         if emoji_fonts.len() < 2 && !emoji_fonts.contains(&path) {
                                             emoji_fonts.push(path.clone());
                                         }
@@ -194,7 +213,7 @@ fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
                             }
                         }
                     }
-                    if emoji_fonts.len() >= 2 && cjk_fonts.len() >= 2 && general_fonts.len() >= 2 {
+                    if nerd_fonts.len() >= 5 && emoji_fonts.len() >= 2 && cjk_fonts.len() >= 2 && general_fonts.len() >= 2 {
                         break;
                     }
                 }
@@ -203,9 +222,9 @@ fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
 
         for dir in dirs_to_scan {
             if dir.exists() {
-                scan_dir_for_fonts(&dir, 0, &mut emoji_fonts, &mut cjk_fonts, &mut general_fonts);
+                scan_dir_for_fonts(&dir, 0, &mut nerd_fonts, &mut emoji_fonts, &mut cjk_fonts, &mut general_fonts);
             }
-            if emoji_fonts.len() >= 2 && cjk_fonts.len() >= 2 && general_fonts.len() >= 2 {
+            if nerd_fonts.len() >= 5 && emoji_fonts.len() >= 2 && cjk_fonts.len() >= 2 && general_fonts.len() >= 2 {
                 break;
             }
         }
@@ -213,29 +232,40 @@ fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) {
 
     // 3. Load all selected fallback fonts into Egui
     let mut loaded_count = 0;
-    let all_fallbacks = emoji_fonts.into_iter()
+    let mut loaded_nerd_names = Vec::new();
+    let mut loaded_other_names = Vec::new();
+
+    // Load Nerd Fonts first
+    for path in nerd_fonts {
+        if let Ok(bytes) = std::fs::read(&path) {
+            let name = format!("sys_nerd_{}", loaded_count);
+            fonts.font_data.insert(
+                name.clone(),
+                std::sync::Arc::new(egui::FontData::from_owned(bytes)),
+            );
+            loaded_nerd_names.push(name);
+            loaded_count += 1;
+        }
+    }
+
+    // Load other standard system fallbacks
+    let other_fallbacks = emoji_fonts.into_iter()
         .chain(cjk_fonts.into_iter())
         .chain(general_fonts.into_iter());
 
-    for path in all_fallbacks {
+    for path in other_fallbacks {
         if let Ok(bytes) = std::fs::read(&path) {
             let name = format!("sys_fallback_{}", loaded_count);
             fonts.font_data.insert(
                 name.clone(),
                 std::sync::Arc::new(egui::FontData::from_owned(bytes)),
             );
-
-            fonts.families
-                .entry(egui::FontFamily::Proportional)
-                .or_default()
-                .push(name.clone());
-            fonts.families
-                .entry(egui::FontFamily::Monospace)
-                .or_default()
-                .push(name);
+            loaded_other_names.push(name);
             loaded_count += 1;
         }
     }
+
+    (loaded_nerd_names, loaded_other_names)
 }
 
 fn setup_custom_fonts(ctx: &egui::Context) {
@@ -250,17 +280,37 @@ fn setup_custom_fonts(ctx: &egui::Context) {
     );
 
     // Load available system fallback fonts for CJK, Emoji, and Unicode coverage
-    load_system_fallbacks(&mut fonts);
+    let (nerd_names, other_names) = load_system_fallbacks(&mut fonts);
 
-    // Put it first for both Proportional and Monospace families
-    fonts.families
-        .entry(egui::FontFamily::Proportional)
-        .or_default()
-        .insert(0, "neospleen".to_owned());
-    fonts.families
-        .entry(egui::FontFamily::Monospace)
-        .or_default()
-        .insert(0, "neospleen".to_owned());
+    // Build the final order for Proportional and Monospace families:
+    // 1. embedded "neospleen"
+    // 2. system nerd fonts (if any)
+    // 3. egui default fonts
+    // 4. system other fallbacks (cjk, emoji, general)
+    for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
+        let mut list = vec!["neospleen".to_owned()];
+        
+        // Add system-installed Nerd Fonts as secondary fallback
+        for name in &nerd_names {
+            list.push(name.clone());
+        }
+
+        // Add egui defaults
+        if let Some(defaults) = fonts.families.get(&family) {
+            for d in defaults {
+                if d != "neospleen" && !nerd_names.contains(d) && !other_names.contains(d) {
+                    list.push(d.clone());
+                }
+            }
+        }
+
+        // Add other system fallbacks at the end
+        for name in &other_names {
+            list.push(name.clone());
+        }
+
+        fonts.families.insert(family, list);
+    }
 
     ctx.set_fonts(fonts);
 }
@@ -640,6 +690,7 @@ fn highlight_layouter(
         font_id: default_font.clone(),
         color: default_color,
         background: Color32::TRANSPARENT,
+        line_height: Some(font_size * 1.35),
         ..Default::default()
     };
 
@@ -676,6 +727,7 @@ fn highlight_layouter(
             font_id: default_font.clone(),
             color: text_color,
             background: bg_color,
+            line_height: Some(font_size * 1.35),
             ..Default::default()
         };
 
@@ -934,7 +986,7 @@ impl eframe::App for EditApp {
 
                         // Minimize button (.)
                         let min_btn = egui::Button::new(".")
-                            .frame(false)
+                            .frame(true)
                             .corner_radius(egui::CornerRadius::ZERO);
                         let min_resp = ui.add_sized(btn_size, min_btn);
                         if min_resp.clicked() {
@@ -945,7 +997,7 @@ impl eframe::App for EditApp {
                         let is_maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
                         let max_char = if is_maximized { "-" } else { "+" };
                         let max_btn = egui::Button::new(max_char)
-                            .frame(false)
+                            .frame(true)
                             .corner_radius(egui::CornerRadius::ZERO);
                         let max_resp = ui.add_sized(btn_size, max_btn);
                         if max_resp.clicked() {
@@ -955,13 +1007,18 @@ impl eframe::App for EditApp {
                         // Close button (X) with custom hover red style
                         let mut close_style = ui.style().as_ref().clone();
                         close_style.visuals.widgets.hovered.bg_fill = egui::Color32::from_rgb(180, 50, 50);
+                        close_style.visuals.widgets.hovered.weak_bg_fill = egui::Color32::from_rgb(180, 50, 50);
+                        close_style.visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
                         close_style.visuals.widgets.hovered.fg_stroke.color = egui::Color32::WHITE;
+
                         close_style.visuals.widgets.active.bg_fill = egui::Color32::from_rgb(140, 30, 30);
+                        close_style.visuals.widgets.active.weak_bg_fill = egui::Color32::from_rgb(140, 30, 30);
+                        close_style.visuals.widgets.active.bg_stroke = egui::Stroke::NONE;
                         close_style.visuals.widgets.active.fg_stroke.color = egui::Color32::WHITE;
 
                         ui.scope_builder(egui::UiBuilder::default().max_rect(ui.available_rect_before_wrap()).style(std::sync::Arc::new(close_style)), |ui| {
                             let close_btn = egui::Button::new("X")
-                                .frame(false)
+                                .frame(true)
                                 .corner_radius(egui::CornerRadius::ZERO);
                             let close_resp = ui.add_sized(btn_size, close_btn);
                             if close_resp.clicked() {
@@ -1162,21 +1219,23 @@ impl eframe::App for EditApp {
                 };
 
                 let available_height = ui.available_height();
-                egui::ScrollArea::vertical()
+                let available_width = ui.available_width();
+                egui::ScrollArea::both()
                     .max_width(f32::INFINITY)
                     .max_height(f32::INFINITY)
+                    .auto_shrink([false; 2])
                     .show(ui, |ui| {
                         let text_edit = egui::TextEdit::multiline(&mut content)
                             .font(egui::FontId::monospace(font_size))
                             .code_editor()
-                            .desired_width(f32::INFINITY)
+                            .desired_width(available_width - 24.0)
                             .desired_rows(1)
                             .margin(egui::Margin::same(6)) // minimal non-zero padding inside editor
                             .lock_focus(true)
                             .layouter(&mut layouter)
                             .id(egui::Id::new("editor_text_edit"));
 
-                        let response = ui.add_sized([ui.available_width(), available_height], text_edit);
+                        let response = ui.add_sized([f32::INFINITY, available_height], text_edit);
                         if response.changed() {
                             changed = true;
                         }
@@ -1194,13 +1253,13 @@ impl eframe::App for EditApp {
         if self.show_about {
             let mut show_about = true;
             let mut close_clicked = false;
-            egui::Window::new("About Edit")
+            egui::Window::new("About Chedit")
                 .collapsible(false)
                 .resizable(false)
                 .open(&mut show_about)
                 .show(ui.ctx(), |ui| {
                     ui.vertical_centered(|ui| {
-                        ui.heading("Edit");
+                        ui.heading("Chedit");
                         ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
                         ui.add_space(8.0);
 
@@ -1232,5 +1291,24 @@ impl eframe::App for EditApp {
                 self.show_about = false;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_neospleen_pua() {
+        let font_bytes = include_bytes!("../../../../../assets/NeoSpleen-NerdFont.ttf");
+        let face = ttf_parser::Face::parse(font_bytes, 0).expect("failed to parse font");
+        
+        let rust_glyph = face.glyph_index('');
+        let folder_glyph = face.glyph_index('');
+        let python_glyph = face.glyph_index('');
+        
+        println!("Rust glyph: {:?}", rust_glyph);
+        println!("Folder glyph: {:?}", folder_glyph);
+        println!("Python glyph: {:?}", python_glyph);
+        
+        assert!(rust_glyph.is_some(), "Rust glyph should be present in NeoSpleen-NerdFont");
     }
 }
