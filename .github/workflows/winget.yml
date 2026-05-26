@@ -29,7 +29,7 @@ jobs:
 
           # Update package using wingetcreate
           curl.exe -JLO https://aka.ms/wingetcreate/latest
-          .\wingetcreate.exe update Microsoft.Edit `
+          .\wingetcreate.exe update IsaiahPettingill.Chedit `
             --version $packageVersion `
             --urls $x64InstallerUrl $arm64InstallerUrl `
             --submit

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Retro Monitor Screen Outer Frame -->
+  <rect x="4" y="4" width="56" height="44" rx="6" fill="#2E3440" stroke="#4C566A" stroke-width="2"/>
+  <!-- Inner Screen -->
+  <rect x="8" y="8" width="48" height="36" rx="3" fill="#1E222A"/>
+  <!-- Monitor Stand -->
+  <path d="M 24,48 L 40,48 L 44,58 L 20,58 Z" fill="#4C566A"/>
+  <rect x="16" y="58" width="32" height="3" rx="1.5" fill="#4C566A"/>
+  <!-- Editor Lines representing text -->
+  <line x1="14" y1="14" x2="38" y2="14" stroke="#88C0D0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="14" y1="20" x2="46" y2="20" stroke="#E5E9F0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="14" y1="26" x2="42" y2="26" stroke="#E5E9F0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="14" y1="32" x2="30" y2="32" stroke="#BF616A" stroke-width="2" stroke-linecap="round"/>
+  <!-- Cursor (blinking indicator) -->
+  <rect x="32" y="31" width="6" height="2" fill="#EBCB8B"/>
+</svg>

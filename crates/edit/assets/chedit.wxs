@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Name="Chedit" Language="1033" Version="$(var.Version)" Manufacturer="Isaiah Pettingill" UpgradeCode="a9f234ba-290c-4a37-b952-cf5287baed9f">
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <MediaTemplate EmbedCab="yes" />
+
+        <Feature Id="ProductFeature" Title="Chedit" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+            <ComponentRef Id="ApplicationShortcut" />
+        </Feature>
+
+        <Icon Id="CheditIcon.exe" SourceFile="$(var.ManifestDir)/assets/chedit.ico" />
+        <Property Id="ARPPRODUCTICON" Value="CheditIcon.exe" />
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFiles64Folder">
+                <Directory Id="INSTALLFOLDER" Name="Chedit" />
+            </Directory>
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="Chedit" />
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <Component Id="CheditExecutable" Guid="c3faefbd-460b-4d43-a60d-771142512f45" Win64="yes">
+                <File Id="CheditEXE" Source="$(var.TargetDir)/release/chedit.exe" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="ApplicationShortcut" Guid="724bfead-a3c0-449e-b91c-2dfbd76d1e4c">
+                <Shortcut Id="ApplicationStartMenuShortcut" 
+                          Name="Chedit" 
+                          Description="A bare-bones retro GUI-based text editor"
+                          Target="[INSTALLFOLDER]chedit.exe"
+                          WorkingDirectory="INSTALLFOLDER"
+                          Icon="CheditIcon.exe" />
+                <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall" />
+                <RegistryValue Root="HKCU" Key="Software\IsaiahPettingill\Chedit" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+            </Component>
+        </DirectoryRef>
+    </Fragment>
+</Wix>

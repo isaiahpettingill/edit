@@ -1,7 +1,34 @@
 use eframe::egui;
+use egui::text::LayoutJob;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
+
+fn accel_label(text: &str, accel_pos: usize) -> egui::WidgetText {
+    let mut job = LayoutJob::default();
+    let (before, rest) = text.split_at(accel_pos);
+    let (accel_ch, after) = rest.split_at(1);
+
+    if !before.is_empty() {
+        job.append(before, 0.0, egui::text::TextFormat::default());
+    }
+    {
+        let mut fmt = egui::text::TextFormat::default();
+        fmt.underline = egui::Stroke::new(1.0_f32, fmt.color);
+        job.append(accel_ch, 0.0, fmt);
+    }
+    if !after.is_empty() {
+        job.append(after, 0.0, egui::text::TextFormat::default());
+    }
+    egui::WidgetText::from(job)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Theme {
+    Dark,
+    Light,
+    Argentina,
+}
 
 pub struct EditApp {
     pub path: Option<PathBuf>,
@@ -25,7 +52,7 @@ pub struct EditApp {
 
     // Styling & Theme
     pub font_size: f32,
-    pub dark_mode: bool,
+    pub theme: Theme,
 
     // Dialogs
     pub show_about: bool,
@@ -335,40 +362,78 @@ fn update_font_sizes(ctx: &egui::Context, base_size: f32) {
     ctx.set_global_style(style);
 }
 
-fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
-    let mut visuals = if dark_mode {
-        let mut vis = egui::Visuals::dark();
-        // Softer dark gray with lower contrast to reduce eye strain (astigmatism friendly)
-        vis.panel_fill = egui::Color32::from_rgb(52, 52, 62); // Softer medium-dark background
-        vis.window_fill = egui::Color32::from_rgb(44, 44, 52); // Slightly darker window/menu background
-        vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(52, 52, 62);
-        vis.widgets.noninteractive.fg_stroke.color = egui::Color32::from_rgb(195, 200, 208); // Dimmed light gray text (no harsh white glow)
-        vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(62, 62, 74); // Subtly lighter gray for buttons/elements
-        vis.widgets.inactive.fg_stroke.color = egui::Color32::from_rgb(195, 200, 208);
-        vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(76, 76, 92); // Softer hover highlight
-        vis.widgets.hovered.fg_stroke.color = egui::Color32::from_rgb(220, 225, 235);
-        vis.widgets.active.bg_fill = egui::Color32::from_rgb(88, 88, 108); // Softer active state
-        vis.widgets.active.fg_stroke.color = egui::Color32::from_rgb(230, 235, 240);
-        vis.selection.bg_fill = egui::Color32::from_rgb(75, 90, 115); // Softer selection color
-        vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(120, 150, 200)); // Subdued selection border
-        vis.hyperlink_color = egui::Color32::from_rgb(120, 180, 220); // Softer link color
-        vis.extreme_bg_color = egui::Color32::from_rgb(40, 40, 48); // Softer dark editor background (not jet black)
-        vis
-    } else {
-        let mut vis = egui::Visuals::light();
-        vis.panel_fill = egui::Color32::from_rgb(245, 246, 248); // clean light slate
-        vis.window_fill = egui::Color32::from_rgb(230, 233, 238);
-        vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(230, 233, 238);
-        vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(215, 220, 228);
-        vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(190, 200, 215); // light steel blue hovered
-        vis.widgets.hovered.fg_stroke.color = egui::Color32::BLACK;
-        vis.widgets.active.bg_fill = egui::Color32::from_rgb(160, 175, 195); // active steel
-        vis.widgets.active.fg_stroke.color = egui::Color32::BLACK;
-        vis.selection.bg_fill = egui::Color32::from_rgb(180, 205, 230); // light steel selection
-        vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(70, 120, 180));
-        vis.hyperlink_color = egui::Color32::from_rgb(40, 100, 160);
-        vis.extreme_bg_color = egui::Color32::WHITE;
-        vis
+fn apply_theme(ctx: &egui::Context, theme: Theme) {
+    let mut visuals = match theme {
+        Theme::Dark => {
+            let mut vis = egui::Visuals::dark();
+            // Softer dark gray with lower contrast to reduce eye strain (astigmatism friendly)
+            vis.panel_fill = egui::Color32::from_rgb(52, 52, 62); // Softer medium-dark background
+            vis.window_fill = egui::Color32::from_rgb(44, 44, 52); // Slightly darker window/menu background
+            vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(52, 52, 62);
+            vis.widgets.noninteractive.fg_stroke.color = egui::Color32::from_rgb(195, 200, 208); // Dimmed light gray text (no harsh white glow)
+            vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(62, 62, 74); // Subtly lighter gray for buttons/elements
+            vis.widgets.inactive.fg_stroke.color = egui::Color32::from_rgb(195, 200, 208);
+            vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(76, 76, 92); // Softer hover highlight
+            vis.widgets.hovered.fg_stroke.color = egui::Color32::from_rgb(220, 225, 235);
+            vis.widgets.active.bg_fill = egui::Color32::from_rgb(88, 88, 108); // Softer active state
+            vis.widgets.active.fg_stroke.color = egui::Color32::from_rgb(230, 235, 240);
+            vis.selection.bg_fill = egui::Color32::from_rgb(75, 90, 115); // Softer selection color
+            vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(120, 150, 200)); // Subdued selection border
+            vis.hyperlink_color = egui::Color32::from_rgb(120, 180, 220); // Softer link color
+            vis.extreme_bg_color = egui::Color32::from_rgb(40, 40, 48); // Softer dark editor background (not jet black)
+            vis
+        }
+        Theme::Light => {
+            let mut vis = egui::Visuals::light();
+            vis.panel_fill = egui::Color32::from_rgb(245, 246, 248); // clean light slate
+            vis.window_fill = egui::Color32::from_rgb(230, 233, 238);
+            vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(230, 233, 238);
+            vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(215, 220, 228);
+            vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(190, 200, 215); // light steel blue hovered
+            vis.widgets.hovered.fg_stroke.color = egui::Color32::BLACK;
+            vis.widgets.active.bg_fill = egui::Color32::from_rgb(160, 175, 195); // active steel
+            vis.widgets.active.fg_stroke.color = egui::Color32::BLACK;
+            vis.selection.bg_fill = egui::Color32::from_rgb(180, 205, 230); // light steel selection
+            vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(70, 120, 180));
+            vis.hyperlink_color = egui::Color32::from_rgb(40, 100, 160);
+            vis.extreme_bg_color = egui::Color32::WHITE;
+            vis
+        }
+        Theme::Argentina => {
+            let mut vis = egui::Visuals::light();
+            let celeste = egui::Color32::from_rgb(186, 234, 245);
+            let celeste_darker = egui::Color32::from_rgb(150, 212, 227);
+            let celeste_lighter = egui::Color32::from_rgb(234, 249, 252);
+            let white = egui::Color32::WHITE;
+            let dark_navy = egui::Color32::from_rgb(15, 45, 90);
+            let sun_gold = egui::Color32::from_rgb(246, 180, 38);
+
+            vis.panel_fill = celeste;
+            vis.window_fill = white;
+            
+            vis.widgets.noninteractive.bg_fill = celeste;
+            vis.widgets.noninteractive.fg_stroke.color = dark_navy;
+            vis.widgets.noninteractive.bg_stroke.color = celeste_darker;
+            
+            vis.widgets.inactive.bg_fill = white;
+            vis.widgets.inactive.fg_stroke.color = dark_navy;
+            vis.widgets.inactive.bg_stroke.color = celeste_darker;
+
+            vis.widgets.hovered.bg_fill = celeste_lighter;
+            vis.widgets.hovered.fg_stroke.color = dark_navy;
+            vis.widgets.hovered.bg_stroke.color = sun_gold;
+
+            vis.widgets.active.bg_fill = sun_gold;
+            vis.widgets.active.fg_stroke.color = dark_navy;
+            vis.widgets.active.bg_stroke.color = dark_navy;
+
+            vis.selection.bg_fill = egui::Color32::from_rgb(210, 240, 248);
+            vis.selection.stroke = egui::Stroke::new(1.0_f32, sun_gold);
+
+            vis.hyperlink_color = egui::Color32::from_rgb(20, 80, 160);
+            vis.extreme_bg_color = white;
+            vis
+        }
     };
 
     // Zero-out all corner radii for flat aesthetics
@@ -384,7 +449,7 @@ fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
 impl EditApp {
     pub fn new(cc: &eframe::CreationContext<'_>, initial_paths: Vec<PathBuf>) -> Self {
         let mut font_size = 16.0;
-        let mut dark_mode = true;
+        let mut theme = Theme::Dark;
 
         if let Some(storage) = cc.storage {
             if let Some(fs_str) = storage.get_string("font_size") {
@@ -392,15 +457,21 @@ impl EditApp {
                     font_size = fs;
                 }
             }
-            if let Some(dm_str) = storage.get_string("dark_mode") {
+            if let Some(theme_str) = storage.get_string("theme") {
+                theme = match theme_str.as_str() {
+                    "light" => Theme::Light,
+                    "argentina" => Theme::Argentina,
+                    _ => Theme::Dark,
+                };
+            } else if let Some(dm_str) = storage.get_string("dark_mode") {
                 if let Ok(dm) = dm_str.parse::<bool>() {
-                    dark_mode = dm;
+                    theme = if dm { Theme::Dark } else { Theme::Light };
                 }
             }
         }
 
         // Apply our curated premium theme style
-        apply_theme(&cc.egui_ctx, dark_mode);
+        apply_theme(&cc.egui_ctx, theme);
         setup_custom_fonts(&cc.egui_ctx);
         update_font_sizes(&cc.egui_ctx, font_size);
 
@@ -420,7 +491,7 @@ impl EditApp {
             status_message: "Welcome to Edit!".to_string(),
             status_time: Some(Instant::now()),
             font_size,
-            dark_mode,
+            theme,
             show_about: false,
             file_menu_id: None,
             edit_menu_id: None,
@@ -764,7 +835,13 @@ fn highlight_layouter(
 impl eframe::App for EditApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         storage.set_string("font_size", self.font_size.to_string());
-        storage.set_string("dark_mode", self.dark_mode.to_string());
+        let theme_str = match self.theme {
+            Theme::Dark => "dark",
+            Theme::Light => "light",
+            Theme::Argentina => "argentina",
+        };
+        storage.set_string("theme", theme_str.to_string());
+        storage.set_string("dark_mode", (self.theme == Theme::Dark).to_string());
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
@@ -897,6 +974,12 @@ impl eframe::App for EditApp {
                         )
                     };
 
+                    let text_color = if dark_mode {
+                        egui::Color32::from_gray(220)
+                    } else {
+                        egui::Color32::from_gray(30)
+                    };
+                    ui.style_mut().visuals.widgets.inactive.fg_stroke = egui::Stroke::new(1.0_f32, text_color);
                     ui.style_mut().visuals.widgets.inactive.bg_fill = egui::Color32::TRANSPARENT;
                     ui.style_mut().visuals.widgets.inactive.weak_bg_fill = egui::Color32::TRANSPARENT;
                     ui.style_mut().visuals.widgets.inactive.bg_stroke = egui::Stroke::NONE;
@@ -914,42 +997,42 @@ impl eframe::App for EditApp {
                     ui.style_mut().visuals.widgets.open.bg_stroke = egui::Stroke::NONE;
 
                     ui.horizontal(|ui| {
-                        let r_file = ui.menu_button("File", |ui| {
-                            if ui.button("New File (Ctrl+N)").clicked() {
+                        let r_file = ui.menu_button(accel_label("File", 0), |ui| {
+                            if ui.button(accel_label("New File (Ctrl+N)", 0)).clicked() {
                                 self.new_untitled_document();
                                 ui.close();
                             }
-                            if ui.button("Open File... (Ctrl+O)").clicked() {
+                            if ui.button(accel_label("Open File... (Ctrl+O)", 0)).clicked() {
                                 self.open_file_dialog();
                                 ui.close();
                             }
                             ui.separator();
-                            if ui.button("Save (Ctrl+S)").clicked() {
+                            if ui.button(accel_label("Save (Ctrl+S)", 0)).clicked() {
                                 self.save_document();
                                 ui.close();
                             }
-                            if ui.button("Save As... (Ctrl+Shift+S)").clicked() {
+                            if ui.button(accel_label("Save As... (Ctrl+Shift+S)", 5)).clicked() {
                                 self.save_document_as();
                                 ui.close();
                             }
                             ui.separator();
-                            if ui.button("Close File (Ctrl+W)").clicked() {
+                            if ui.button(accel_label("Close File (Ctrl+W)", 0)).clicked() {
                                 self.close_document();
                                 ui.close();
                             }
-                            if ui.button("Exit (Ctrl+Q)").clicked() {
+                            if ui.button(accel_label("Exit (Ctrl+Q)", 1)).clicked() {
                                 ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
                             }
                         });
                         self.file_menu_id = Some(r_file.response.id);
 
-                        let r_edit = ui.menu_button("Edit", |ui| {
-                            if ui.button("Find (Ctrl+F)").clicked() {
+                        let r_edit = ui.menu_button(accel_label("Edit", 0), |ui| {
+                            if ui.button(accel_label("Find (Ctrl+F)", 0)).clicked() {
                                 self.search_open = true;
                                 self.search_focus_triggered = true;
                                 ui.close();
                             }
-                            if ui.button("Replace (Ctrl+H)").clicked() {
+                            if ui.button(accel_label("Replace (Ctrl+H)", 0)).clicked() {
                                 self.replace_open = true;
                                 self.search_open = true;
                                 self.search_focus_triggered = true;
@@ -958,31 +1041,41 @@ impl eframe::App for EditApp {
                         });
                         self.edit_menu_id = Some(r_edit.response.id);
 
-                        let r_view = ui.menu_button("View", |ui| {
-                            if ui.checkbox(&mut self.dark_mode, "Dark Mode").changed() {
-                                apply_theme(ui.ctx(), self.dark_mode);
+                        let r_view = ui.menu_button(accel_label("View", 0), |ui| {
+                            let mut theme_changed = false;
+                            if ui.radio_value(&mut self.theme, Theme::Dark, accel_label("Dark Theme", 0)).changed() {
+                                theme_changed = true;
+                            }
+                            if ui.radio_value(&mut self.theme, Theme::Light, accel_label("Light Theme", 0)).changed() {
+                                theme_changed = true;
+                            }
+                            if ui.radio_value(&mut self.theme, Theme::Argentina, accel_label("Argentina Theme", 0)).changed() {
+                                theme_changed = true;
+                            }
+                            if theme_changed {
+                                apply_theme(ui.ctx(), self.theme);
                                 update_font_sizes(ui.ctx(), self.font_size);
                             }
                             ui.separator();
-                            if ui.button("Increase Font Size (Ctrl++)").clicked() {
+                            if ui.button(accel_label("Increase Font Size (Ctrl++)", 0)).clicked() {
                                 self.font_size += 1.0;
                                 font_changed = true;
                             }
-                            if ui.button("Decrease Font Size (Ctrl+-)").clicked() {
+                            if ui.button(accel_label("Decrease Font Size (Ctrl+-)", 0)).clicked() {
                                 if self.font_size > 8.0 {
                                      self.font_size -= 1.0;
                                      font_changed = true;
                                 }
                             }
-                            if ui.button("Reset Font Size (Ctrl+0)").clicked() {
+                            if ui.button(accel_label("Reset Font Size (Ctrl+0)", 0)).clicked() {
                                 self.font_size = 16.0;
                                 font_changed = true;
                             }
                         });
                         self.view_menu_id = Some(r_view.response.id);
 
-                        let r_help = ui.menu_button("Help", |ui| {
-                            if ui.button("About").clicked() {
+                        let r_help = ui.menu_button(accel_label("Help", 0), |ui| {
+                            if ui.button(accel_label("About", 0)).clicked() {
                                 self.show_about = true;
                                 ui.close();
                             }
@@ -1250,6 +1343,35 @@ impl eframe::App for EditApp {
                 .corner_radius(egui::CornerRadius::ZERO)
             )
             .show_inside(ui, |ui| {
+                if self.theme == Theme::Argentina {
+                    let rect = ui.max_rect();
+                    let h = rect.height() / 3.0;
+                    let celeste = egui::Color32::from_rgba_unmultiplied(186, 234, 245, 38);
+                    let white = egui::Color32::from_rgba_unmultiplied(255, 255, 255, 38);
+                    let painter = ui.painter();
+                    painter.rect_filled(
+                        egui::Rect::from_min_max(rect.min, egui::pos2(rect.max.x, rect.min.y + h)),
+                        0.0,
+                        celeste,
+                    );
+                    painter.rect_filled(
+                        egui::Rect::from_min_max(
+                            egui::pos2(rect.min.x, rect.min.y + h),
+                            egui::pos2(rect.max.x, rect.min.y + 2.0 * h),
+                        ),
+                        0.0,
+                        white,
+                    );
+                    painter.rect_filled(
+                        egui::Rect::from_min_max(
+                            egui::pos2(rect.min.x, rect.min.y + 2.0 * h),
+                            rect.max,
+                        ),
+                        0.0,
+                        celeste,
+                    );
+                }
+
                 let font_size = self.font_size;
                 let search_text_clone = self.search_text.clone();
                 let active_match_idx = self.search_result_index;
@@ -1315,10 +1437,10 @@ impl eframe::App for EditApp {
                         ui.label(format!("Version {}", env!("CARGO_PKG_VERSION")));
                         ui.add_space(8.0);
 
-                        let gradient_bg = if self.dark_mode {
-                            egui::Color32::from_rgb(58, 58, 68)
-                        } else {
-                            egui::Color32::from_rgb(240, 240, 245)
+                        let gradient_bg = match self.theme {
+                            Theme::Dark => egui::Color32::from_rgb(58, 58, 68),
+                            Theme::Light => egui::Color32::from_rgb(240, 240, 245),
+                            Theme::Argentina => egui::Color32::from_rgb(210, 240, 248),
                         };
 
                         egui::Frame::canvas(ui.style())

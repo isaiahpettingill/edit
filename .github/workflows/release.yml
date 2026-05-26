@@ -40,18 +40,28 @@ jobs:
         run: |
           cd target/release
           tar -czf ../../${{ matrix.asset_name }} chedit
+      - name: Install cargo-wix
+        if: runner.os == 'Windows'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-wix
       - name: Package Binary (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           cd target/release
           Compress-Archive -Path chedit.exe -DestinationPath ../../${{ matrix.asset_name }}
+          cd ../..
+          cargo wix -o chedit-windows.msi --nocapture
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.asset_name }}
-
+          path: |
+            chedit-linux.tar.gz
+            chedit-windows.zip
+            chedit-windows.msi
+            
   release:
     name: Create Release
     needs: build
@@ -67,12 +77,15 @@ jobs:
         run: |
           mv artifacts/chedit-linux/chedit-linux.tar.gz .
           mv artifacts/chedit-windows/chedit-windows.zip .
+          mv artifacts/chedit-windows/chedit-windows.msi .
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             chedit-linux.tar.gz
             chedit-windows.zip
+            chedit-windows.msi
           draft: false
           prerelease: false
           generate_release_notes: true
+

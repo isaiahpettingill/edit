@@ -127,14 +127,14 @@ esac
 
 if [ "$dev" = 1 ]; then
     log "Downloading main branch"
-    download "$tmpdir/edit.tar.gz" 'https://github.com/microsoft/edit/archive/refs/heads/main.tar.gz'
+    download "$tmpdir/edit.tar.gz" 'https://github.com/isaiahpettingill/edit/archive/refs/heads/main.tar.gz'
 else
     log "Fetching latest release tag"
-    download "$tmpdir/latest.json" 'https://api.github.com/repos/microsoft/edit/releases/latest'
+    download "$tmpdir/latest.json" 'https://api.github.com/repos/isaiahpettingill/edit/releases/latest'
     tag=$(grep -oE '"tag_name": *"[^"]+"' "$tmpdir/latest.json" | grep -oE 'v[^"]+')
     [ -n "$tag" ] || die "Could not determine latest release tag."
     log "Latest release: $tag"
-    download "$tmpdir/edit.tar.gz" "https://github.com/microsoft/edit/archive/refs/tags/$tag.tar.gz"
+    download "$tmpdir/edit.tar.gz" "https://github.com/isaiahpettingill/edit/archive/refs/tags/$tag.tar.gz"
 fi
 
 srcdir="$tmpdir/edit-src"
@@ -151,13 +151,13 @@ log "Building"
 [ -z "$icu_renaming_version" ] || export EDIT_CFG_ICU_RENAMING_VERSION="$icu_renaming_version"
 
 if rustup component list --installed 2>/dev/null | grep -q rust-src; then
-    (cd "$srcdir" && RUSTC_BOOTSTRAP=1 cargo build -p edit --release --config .cargo/release.toml)
+    (cd "$srcdir" && RUSTC_BOOTSTRAP=1 cargo build -p chedit --release --config .cargo/release.toml)
 else
     warn "rust-src component not found; building without size optimizations"
-    (cd "$srcdir" && cargo build -p edit --release)
+    (cd "$srcdir" && cargo build -p chedit --release)
 fi
 
-bin="$srcdir/target/release/edit"
+bin="$srcdir/target/release/chedit"
 [ -x "$bin" ] || die "Build failed: binary not found."
 
 #### Install
@@ -170,33 +170,61 @@ else
     run=""
 fi
 
-log "Installing to $dest"
+log "Installing binary to $dest"
 $run mkdir -p "$dest"
-$run cp "$bin" "$dest/msedit"
-$run chmod 755 "$dest/msedit"
-if [ ! -e "$dest/edit" ] || [ "$(readlink "$dest/edit" 2>/dev/null)" = "msedit" ]; then
-    $run ln -sf msedit "$dest/edit"
-    edit_linked=1
-else
-    edit_linked=0
+$run cp "$bin" "$dest/chedit"
+$run chmod 755 "$dest/chedit"
+
+# Install Desktop Entry and Icons for Linux desktops
+if [ "$(uname -s)" != "Darwin" ]; then
+    if [ "$system" = 1 ]; then
+        apps_dest="/usr/share/applications"
+        icon_dest="/usr/share/icons/hicolor/scalable/apps"
+    else
+        apps_dest="$HOME/.local/share/applications"
+        icon_dest="$HOME/.local/share/icons/hicolor/scalable/apps"
+    fi
+
+    log "Installing desktop file and icons"
+    $run mkdir -p "$apps_dest"
+    $run mkdir -p "$icon_dest"
+    
+    # Copy desktop entry file
+    $run cp "$srcdir/crates/edit/assets/chedit.desktop" "$apps_dest/chedit.desktop"
+    $run chmod 644 "$apps_dest/chedit.desktop"
+
+    # Copy scalable SVG icon
+    $run cp "$srcdir/crates/edit/assets/chedit.svg" "$icon_dest/chedit.svg"
+    $run chmod 644 "$icon_dest/chedit.svg"
+
+    # Fallback/alternative icon location for some desktop environments
+    if [ "$system" = 0 ]; then
+        $run mkdir -p "$HOME/.local/share/icons"
+        $run cp "$srcdir/crates/edit/assets/chedit.svg" "$HOME/.local/share/icons/chedit.svg"
+        $run chmod 644 "$HOME/.local/share/icons/chedit.svg"
+    fi
+
+    # Update desktop database if available to refresh menu items
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        $run update-desktop-database "$apps_dest" || true
+    fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        if [ "$system" = 1 ]; then
+            $run gtk-update-icon-cache -f -t /usr/share/icons/hicolor || true
+        else
+            $run gtk-update-icon-cache -f -t "$HOME/.local/share/icons" || true
+        fi
+    fi
 fi
 
 #### Summary
 
 case ":$PATH:" in
     *":$dest:"*)
-        if [ "$edit_linked" = 1 ]; then
-            echo "✅ Done. Run 'edit' or 'msedit' to start."
-        else
-            echo "✅ Done. Run 'msedit' to start."
-        fi
+        echo "✅ Done. Run 'chedit' to start."
         ;;
     *)
         echo "⚠️ Done. $dest is not in PATH; you may need to add it."
-        if [ "$edit_linked" = 1 ]; then
-            echo "Run '$dest/edit' or '$dest/msedit' to start."
-        else
-            echo "Run '$dest/msedit' to start."
-        fi
+        echo "Run '$dest/chedit' to start."
         ;;
 esac

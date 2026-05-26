@@ -1,6 +1,6 @@
 [package]
 name = "chedit"
-version = "2.0.3"
+version = "2.0.4"
 
 edition.workspace = true
 license.workspace = true
@@ -33,7 +33,6 @@ libc = "0.2"
 # The default toml crate bundles its dependencies with bad compile times. Thanks.
 # Thankfully toml-span exists. FWIW the alternative is yaml-rust (without the 2 suffix).
 toml-span = { version = "0.7", default-features = false }
-
 [target.'cfg(unix)'.build-dependencies]
 libc = "0.2"
 
@@ -51,6 +50,9 @@ features = [
     "Win32_System_LibraryLoader",
     "Win32_System_Threading",
 ]
+
+[package.metadata.wix]
+source = "assets/chedit.wxs"
 
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }

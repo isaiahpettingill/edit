@@ -145,15 +145,17 @@ fn configure_windows_binary(target_os: TargetOs) {
 
     let manifest_path = "src/bin/chedit/chedit.exe.manifest";
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let icon_path = std::path::Path::new(manifest_dir).join("assets/edit.ico");
+    let icon_path = std::path::Path::new(manifest_dir).join("assets/chedit.ico");
 
     winresource::WindowsResource::new()
         .set_manifest_file(manifest_path)
-        .set("FileDescription", "Edit")
-        .set("LegalCopyright", "© Microsoft Corporation. All rights reserved.")
+        .set("FileDescription", "Chedit")
+        .set("LegalCopyright", "© Isaiah Pettingill. All rights reserved.")
         .set_icon(icon_path.to_str().unwrap())
         .compile()
         .unwrap();
 
     println!("cargo::rerun-if-changed={manifest_path}");
 }
+
+
