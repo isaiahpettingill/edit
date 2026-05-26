@@ -29,6 +29,12 @@ pub struct EditApp {
 
     // Dialogs
     pub show_about: bool,
+
+    // Menu IDs for Alt shortcuts
+    pub file_menu_id: Option<egui::Id>,
+    pub edit_menu_id: Option<egui::Id>,
+    pub view_menu_id: Option<egui::Id>,
+    pub help_menu_id: Option<egui::Id>,
 }
 
 fn load_system_fallbacks(fonts: &mut egui::FontDefinitions) -> (Vec<String>, Vec<String>) {
@@ -414,6 +420,10 @@ impl EditApp {
             font_size,
             dark_mode,
             show_about: false,
+            file_menu_id: None,
+            edit_menu_id: None,
+            view_menu_id: None,
+            help_menu_id: None,
         };
 
         if let Some(path) = initial_paths.into_iter().next() {
@@ -809,6 +819,31 @@ impl eframe::App for EditApp {
             font_changed = true;
         }
 
+        // Alt-shortcuts to open menus
+        let mut open_menu = None;
+        if ui.input_mut(|i| i.consume_key(egui::Modifiers::ALT, egui::Key::F)) {
+            open_menu = self.file_menu_id;
+        } else if ui.input_mut(|i| i.consume_key(egui::Modifiers::ALT, egui::Key::E)) {
+            open_menu = self.edit_menu_id;
+        } else if ui.input_mut(|i| i.consume_key(egui::Modifiers::ALT, egui::Key::V)) {
+            open_menu = self.view_menu_id;
+        } else if ui.input_mut(|i| i.consume_key(egui::Modifiers::ALT, egui::Key::H)) {
+            open_menu = self.help_menu_id;
+        }
+
+        if let Some(menu_id) = open_menu {
+            ui.memory_mut(|mem| mem.request_focus(menu_id));
+            ui.input_mut(|i| {
+                i.events.push(egui::Event::Key {
+                    key: egui::Key::Enter,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: egui::Modifiers::NONE,
+                });
+            });
+        }
+
         // Menu Bar Panel (integrated undecorated title bar controls + drag region)
         egui::Panel::top("menu_bar")
             .frame(egui::Frame::NONE
@@ -870,7 +905,7 @@ impl eframe::App for EditApp {
                     ui.style_mut().visuals.widgets.open.bg_stroke = egui::Stroke::NONE;
 
                     ui.horizontal(|ui| {
-                        ui.menu_button("File", |ui| {
+                        let r_file = ui.menu_button("File", |ui| {
                             if ui.button("New File (Ctrl+N)").clicked() {
                                 self.new_untitled_document();
                                 ui.close();
@@ -897,8 +932,9 @@ impl eframe::App for EditApp {
                                 ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
                             }
                         });
+                        self.file_menu_id = Some(r_file.response.id);
 
-                        ui.menu_button("Edit", |ui| {
+                        let r_edit = ui.menu_button("Edit", |ui| {
                             if ui.button("Find (Ctrl+F)").clicked() {
                                 self.search_open = true;
                                 self.search_focus_triggered = true;
@@ -911,8 +947,9 @@ impl eframe::App for EditApp {
                                 ui.close();
                             }
                         });
+                        self.edit_menu_id = Some(r_edit.response.id);
 
-                        ui.menu_button("View", |ui| {
+                        let r_view = ui.menu_button("View", |ui| {
                             if ui.checkbox(&mut self.dark_mode, "Dark Mode").changed() {
                                 apply_theme(ui.ctx(), self.dark_mode);
                                 update_font_sizes(ui.ctx(), self.font_size);
@@ -933,13 +970,15 @@ impl eframe::App for EditApp {
                                 font_changed = true;
                             }
                         });
+                        self.view_menu_id = Some(r_view.response.id);
 
-                        ui.menu_button("Help", |ui| {
+                        let r_help = ui.menu_button("Help", |ui| {
                             if ui.button("About").clicked() {
                                 self.show_about = true;
                                 ui.close();
                             }
                         });
+                        self.help_menu_id = Some(r_help.response.id);
                     });
                 });
 
