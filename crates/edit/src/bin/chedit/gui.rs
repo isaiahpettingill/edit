@@ -332,20 +332,20 @@ fn update_font_sizes(ctx: &egui::Context, base_size: f32) {
 fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
     let mut visuals = if dark_mode {
         let mut vis = egui::Visuals::dark();
-        // Soft dark gray similar to Catppuccin Macchiato/Mocha without purple
-        vis.panel_fill = egui::Color32::from_rgb(30, 30, 40); // Base: soft charcoal
-        vis.window_fill = egui::Color32::from_rgb(20, 20, 27); // Crust/Mantle: soft dark gray
-        vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(30, 30, 40);
-        vis.widgets.noninteractive.fg_stroke.color = egui::Color32::from_rgb(205, 214, 244); // Text: ash / very light gray
-        vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(45, 45, 56); // Surface0: slightly lighter gray
-        vis.widgets.inactive.fg_stroke.color = egui::Color32::from_rgb(205, 214, 244);
-        vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(60, 60, 75); // Surface1: hovered gray
-        vis.widgets.hovered.fg_stroke.color = egui::Color32::from_rgb(240, 240, 245);
-        vis.widgets.active.bg_fill = egui::Color32::from_rgb(75, 75, 95); // Surface2: active gray
-        vis.widgets.active.fg_stroke.color = egui::Color32::WHITE;
-        vis.selection.bg_fill = egui::Color32::from_rgb(58, 76, 100); // Selection: soft blue-slate (no purple)
-        vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(137, 180, 250)); // Soft blue highlight
-        vis.hyperlink_color = egui::Color32::from_rgb(137, 220, 235); // Sky blue
+        // Softer dark gray with lower contrast to reduce eye strain (astigmatism friendly)
+        vis.panel_fill = egui::Color32::from_rgb(52, 52, 62); // Softer medium-dark background
+        vis.window_fill = egui::Color32::from_rgb(44, 44, 52); // Slightly darker window/menu background
+        vis.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(52, 52, 62);
+        vis.widgets.noninteractive.fg_stroke.color = egui::Color32::from_rgb(195, 200, 208); // Dimmed light gray text (no harsh white glow)
+        vis.widgets.inactive.bg_fill = egui::Color32::from_rgb(62, 62, 74); // Subtly lighter gray for buttons/elements
+        vis.widgets.inactive.fg_stroke.color = egui::Color32::from_rgb(195, 200, 208);
+        vis.widgets.hovered.bg_fill = egui::Color32::from_rgb(76, 76, 92); // Softer hover highlight
+        vis.widgets.hovered.fg_stroke.color = egui::Color32::from_rgb(220, 225, 235);
+        vis.widgets.active.bg_fill = egui::Color32::from_rgb(88, 88, 108); // Softer active state
+        vis.widgets.active.fg_stroke.color = egui::Color32::from_rgb(230, 235, 240);
+        vis.selection.bg_fill = egui::Color32::from_rgb(75, 90, 115); // Softer selection color
+        vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(120, 150, 200)); // Subdued selection border
+        vis.hyperlink_color = egui::Color32::from_rgb(120, 180, 220); // Softer link color
         vis
     } else {
         let mut vis = egui::Visuals::light();
@@ -1264,7 +1264,7 @@ impl eframe::App for EditApp {
                         ui.add_space(8.0);
 
                         let gradient_bg = if self.dark_mode {
-                            egui::Color32::from_rgb(32, 38, 48)
+                            egui::Color32::from_rgb(58, 58, 68)
                         } else {
                             egui::Color32::from_rgb(240, 240, 245)
                         };
@@ -1275,7 +1275,7 @@ impl eframe::App for EditApp {
                             .inner_margin(egui::Margin::same(12))
                             .show(ui, |ui| {
                                 ui.label(
-                                    "A modern, premium graphical text editor built with egui and eframe.\n\
+                                    "A bare-bones retro GUI-based text editor with a tiny binary size and no syntax/coding features.\n\
                                     Paying homage to the classic MS-DOS Editor, but re-imagined with a state-of-the-art GUI layout."
                                 );
                             });

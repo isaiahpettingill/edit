@@ -51,11 +51,11 @@ fn main() -> eframe::Result<()> {
 
 fn print_help() {
     println!(concat!(
-        "Usage: chedit [OPTIONS] [FILE]\n",
+        "chedit - A bare-bones retro GUI-based text editor with a tiny binary size and no syntax/coding features.\n\n",
+        "Usage: chedit [OPTIONS] [FILE]\n\n",
         "Options:\n",
         "    -h, --help       Print this help message\n",
-        "    -v, --version    Print the version number\n",
-        "\n",
+        "    -v, --version    Print the version number\n\n",
         "Arguments:\n",
         "    FILE             The file to open\n",
     ));

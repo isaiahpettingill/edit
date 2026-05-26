@@ -1,15 +1,15 @@
-# ![Application Icon for Edit](./assets/edit.svg) Edit
+# ![Application Icon for Chedit](./assets/edit.svg) Chedit
 
-A modern, premium graphical text editor built with Rust, `egui`, and `eframe`.
+A bare-bones retro GUI-based text editor with a tiny binary size and no syntax or coding features.
 
-This editor is a graphical redesign paying homage to the classic [MS-DOS Editor](https://en.wikipedia.org/wiki/MS-DOS_Editor), but re-imagined with a state-of-the-art GUI layout, custom themes, and standard input controls. The goal is to provide a clean, lightweight, visual text editor supporting single-document editing, native file saving/loading, and interactive search/replace highlighting.
+Chedit is a graphical visual text editor paying homage to the classic [MS-DOS Editor](https://en.wikipedia.org/wiki/MS-DOS_Editor), but re-imagined as a minimal, lightweight, visual text editor with a state-of-the-art GUI layout, custom themes, and standard input controls. The goal is to provide a clean, lightweight, visual text editor supporting single-document editing, native file saving/loading, and interactive search/replace highlighting, without any bloated coding or IDE features.
 
 ## Features
 
 - **Single-Document Editor**: Focuses on editing one document at a time, preserving the simple workspace model of the original MS-DOS Editor.
-- **Custom Title Bar & Controls**: Undecorated viewport with integrated menus, window controls (Minimize `-`, Maximize `+`, Close `X`), and a middle draggable area that displays the active filename.
+- **Custom Title Bar & Controls**: Undecorated viewport with integrated menus, window controls (Minimize `.`, Maximize `+`/`-`, Close `X`), and a middle draggable area that displays the active filename.
 - **Interactive Find & Replace**: A clean overlay panel showing real-time search match counts, highlighting results, and enabling individual or global replacements.
-- **Flat Premium Aesthetics**: Curated slate-grey dark mode (and clean light mode) with flat corners, minimal non-zero margins/paddings, steel-slate blue highlighting, and no purple selection colors.
+- **Flat Retro Aesthetics**: Soft, astigmatism-friendly dark mode (and clean light mode) with flat corners, minimal non-zero margins/paddings, steel-slate blue highlighting, and no purple selection colors.
 - **Familiar Keyboard Shortcuts**:
   - `Ctrl + N`: New File
   - `Ctrl + O`: Open File...
