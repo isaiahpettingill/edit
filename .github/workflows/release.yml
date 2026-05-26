@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: chedit-linux
+            asset_name: chedit-linux.tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: chedit-windows
+            asset_name: chedit-windows.zip
+    steps:
+      - name: Disable git autocrlf
+        if: matrix.os == 'windows-latest'
+        run: git config --global core.autocrlf false
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup toolchain install nightly --no-self-update --profile minimal --component rust-src
+      - name: Build Release
+        run: cargo build --release --bin chedit
+      - name: Package Binary (Unix)
+        if: runner.os == 'Linux'
+        run: |
+          cd target/release
+          tar -czf ../../${{ matrix.asset_name }} chedit
+      - name: Package Binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd target/release
+          Compress-Archive -Path chedit.exe -DestinationPath ../../${{ matrix.asset_name }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.asset_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Flatten Artifacts
+        run: |
+          mv artifacts/chedit-linux/chedit-linux.tar.gz .
+          mv artifacts/chedit-windows/chedit-windows.zip .
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            chedit-linux.tar.gz
+            chedit-windows.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
