@@ -275,7 +275,7 @@ fn setup_custom_fonts(ctx: &egui::Context) {
     fonts.font_data.insert(
         "neospleen".to_owned(),
         std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
-            "../../../../../assets/NeoSpleen-NerdFont.ttf"
+            "../../../assets/NeoSpleen-NerdFont.ttf"
         ))),
     );
 
@@ -1298,7 +1298,7 @@ impl eframe::App for EditApp {
 mod tests {
     #[test]
     fn test_neospleen_pua() {
-        let font_bytes = include_bytes!("../../../../../assets/NeoSpleen-NerdFont.ttf");
+        let font_bytes = include_bytes!("../../../assets/NeoSpleen-NerdFont.ttf");
         let face = ttf_parser::Face::parse(font_bytes, 0).expect("failed to parse font");
         
         let rust_glyph = face.glyph_index('');

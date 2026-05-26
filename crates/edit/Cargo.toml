@@ -9,6 +9,7 @@ rust-version.workspace = true
 
 build = "build/main.rs"
 categories = ["text-editors"]
+description = "A bare-bones retro GUI-based text editor with a tiny binary size and no syntax/coding features."
 
 [[bench]]
 name = "lib"

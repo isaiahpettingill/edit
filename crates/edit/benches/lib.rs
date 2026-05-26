@@ -30,7 +30,7 @@ struct EditingTraceData<'a> {
 fn bench_buffer(c: &mut Criterion) {
     let scratch = scratch_arena(None);
     let data = {
-        let data = include_bytes!("../../../assets/editing-traces/rustcode.json.zst");
+        let data = include_bytes!("../assets/editing-traces/rustcode.json.zst");
         let data = zstd::decode_all(Cursor::new(data)).unwrap();
         let data = str::from_utf8(&data).unwrap();
 
@@ -174,7 +174,7 @@ fn bench_hash(c: &mut Criterion) {
 }
 
 fn bench_json(c: &mut Criterion) {
-    let str = include_str!("../../../assets/highlighting-tests/json.json");
+    let str = include_str!("../assets/highlighting-tests/json.json");
 
     c.benchmark_group("json").throughput(Throughput::Bytes(str.len() as u64)).bench_function(
         "parse",
@@ -189,7 +189,7 @@ fn bench_json(c: &mut Criterion) {
 }
 
 fn bench_lsh(c: &mut Criterion) {
-    let bytes = include_bytes!("../../../assets/highlighting-tests/markdown.md");
+    let bytes = include_bytes!("../assets/highlighting-tests/markdown.md");
     let bytes = &bytes[..];
     let lang = lsh::LANGUAGES.iter().find(|lang| lang.id == "markdown").unwrap();
     let highlighter = lsh::Highlighter::new(black_box(&bytes), lang);

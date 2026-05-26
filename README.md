@@ -1,4 +1,4 @@
-# ![Application Icon for Chedit](./assets/edit.svg) Chedit
+# ![Application Icon for Chedit](./crates/edit/assets/edit.svg) Chedit
 
 A bare-bones retro GUI-based text editor with a tiny binary size and no syntax or coding features.
 
