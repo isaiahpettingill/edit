@@ -352,6 +352,7 @@ fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
         vis.selection.bg_fill = egui::Color32::from_rgb(75, 90, 115); // Softer selection color
         vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(120, 150, 200)); // Subdued selection border
         vis.hyperlink_color = egui::Color32::from_rgb(120, 180, 220); // Softer link color
+        vis.extreme_bg_color = egui::Color32::from_rgb(40, 40, 48); // Softer dark editor background (not jet black)
         vis
     } else {
         let mut vis = egui::Visuals::light();
@@ -366,6 +367,7 @@ fn apply_theme(ctx: &egui::Context, dark_mode: bool) {
         vis.selection.bg_fill = egui::Color32::from_rgb(180, 205, 230); // light steel selection
         vis.selection.stroke = egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(70, 120, 180));
         vis.hyperlink_color = egui::Color32::from_rgb(40, 100, 160);
+        vis.extreme_bg_color = egui::Color32::WHITE;
         vis
     };
 
@@ -537,8 +539,15 @@ impl EditApp {
     }
 
     pub fn save_document_as(&mut self) -> bool {
+        let default_name = if self.name.contains('.') {
+            self.name.clone()
+        } else {
+            format!("{}.txt", self.name)
+        };
         let dialog = rfd::FileDialog::new()
-            .set_file_name(&self.name);
+            .set_file_name(&default_name)
+            .add_filter("Text Files (*.txt)", &["txt"])
+            .add_filter("All Files (*.*)", &["*"]);
 
         if let Some(path) = dialog.save_file() {
             match fs::write(&path, &self.content) {
@@ -1069,11 +1078,15 @@ impl eframe::App for EditApp {
 
                 // 4. Center-aligned title text
                 if panel_rect.width() > 250.0 {
-                    let title_text = if let Some(path) = &self.path {
+                    let mut title_text = if let Some(path) = &self.path {
                         path.file_name().unwrap_or_default().to_string_lossy().into_owned()
                     } else {
                         self.name.clone()
                     };
+                    if title_text.chars().count() > 30 {
+                        let truncated: String = title_text.chars().take(27).collect();
+                        title_text = format!("{}...", truncated);
+                    }
                     let name_with_dirty = if self.is_dirty() {
                         format!("{}*", title_text)
                     } else {
