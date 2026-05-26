@@ -9,7 +9,7 @@ use std::ops::Deref;
 #[cfg(debug_assertions)]
 use super::debug;
 use super::{Arena, release};
-use crate::helpers::*;
+use crate::stdext::helpers::*;
 
 /// Borrows an [`Arena`] for temporary allocations.
 ///

@@ -9,8 +9,8 @@
 use std::fmt;
 use std::hint::unreachable_unchecked;
 
-use stdext::arena::Arena;
-use stdext::collections::{BString, BVec};
+use crate::stdext::arena::Arena;
+use crate::stdext::collections::{BString, BVec};
 
 use crate::unicode::MeasurementConfig;
 
@@ -213,7 +213,7 @@ impl<'a, 'i> Parser<'a, 'i> {
             self.pos += 1;
         }
 
-        if let Some(num) = stdext::float::parse_f64_approx(&self.bytes[start..self.pos])
+        if let Some(num) = crate::stdext::float::parse_f64_approx(&self.bytes[start..self.pos])
             && num.is_finite()
         {
             Ok(Value::Number(num))
@@ -510,7 +510,7 @@ impl<'a, 'i> Parser<'a, 'i> {
 #[allow(clippy::invisible_characters)]
 #[cfg(test)]
 mod tests {
-    use stdext::arena::scratch_arena;
+    use crate::stdext::arena::scratch_arena;
 
     use super::*;
 

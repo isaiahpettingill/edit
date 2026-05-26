@@ -14,9 +14,9 @@ use std::path::Path;
 use std::ptr::{NonNull, null_mut};
 use std::{io, thread, time};
 
-use stdext::arena::{Arena, scratch_arena};
-use stdext::arena_format;
-use stdext::collections::{BString, BVec};
+use crate::stdext::arena::{Arena, scratch_arena};
+use crate::stdext::arena_format;
+use crate::stdext::collections::{BString, BVec};
 
 use crate::helpers::*;
 

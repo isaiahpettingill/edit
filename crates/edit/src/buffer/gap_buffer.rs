@@ -5,8 +5,8 @@ use std::ops::Range;
 use std::ptr::{self, NonNull};
 use std::{io, slice};
 
-use stdext::sys::{virtual_commit, virtual_release, virtual_reserve};
-use stdext::{ReplaceRange as _, slice_copy_safe};
+use crate::stdext::sys::{virtual_commit, virtual_release, virtual_reserve};
+use crate::stdext::{ReplaceRange as _, slice_copy_safe};
 
 use crate::document::{ReadableDocument, WriteableDocument};
 use crate::helpers::*;

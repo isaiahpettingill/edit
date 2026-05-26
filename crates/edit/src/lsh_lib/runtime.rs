@@ -25,9 +25,9 @@
 use std::fmt::{self, Debug};
 use std::mem;
 
-use stdext::arena::Arena;
-use stdext::arena_write_fmt;
-use stdext::collections::{BString, BVec};
+use crate::stdext::arena::Arena;
+use crate::stdext::arena_write_fmt;
+use crate::stdext::collections::{BString, BVec};
 
 /// A compiled language definition with its bytecode entrypoint.
 pub struct Language {

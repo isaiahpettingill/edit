@@ -28,3 +28,6 @@ pub mod sys;
 pub mod tui;
 pub mod unicode;
 pub mod vt;
+
+pub mod stdext;
+pub mod lsh_lib;

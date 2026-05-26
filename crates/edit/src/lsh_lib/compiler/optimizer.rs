@@ -15,8 +15,8 @@
 
 use std::ptr;
 
-use stdext::arena::scratch_arena;
-use stdext::collections::BVec;
+use crate::stdext::arena::scratch_arena;
+use crate::stdext::collections::BVec;
 
 use super::*;
 

@@ -1,7 +1,7 @@
 use std::fmt;
 use std::ops::RangeInclusive;
 
-use stdext::arena::Arena;
+use crate::stdext::arena::Arena;
 
 use super::Intern;
 

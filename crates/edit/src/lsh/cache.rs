@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use lsh::runtime::Highlight;
-use stdext::arena::{Arena, scratch_arena};
-use stdext::collections::BVec;
+use crate::lsh_lib::runtime::Highlight;
+use crate::stdext::arena::{Arena, scratch_arena};
+use crate::stdext::collections::BVec;
 
 use crate::helpers::CoordType;
 use crate::lsh::{HighlightKind, Highlighter, HighlighterState};

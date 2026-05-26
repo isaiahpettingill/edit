@@ -52,10 +52,10 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use stdext::arena::scratch_arena;
+use crate::stdext::arena::scratch_arena;
 
 use super::*;
-use crate::runtime::Instruction;
+use crate::lsh_lib::runtime::Instruction;
 
 #[derive(Debug, Clone, Copy)]
 enum Relocation<'a> {

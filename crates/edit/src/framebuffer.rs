@@ -8,10 +8,10 @@ use std::ops::{BitOr, BitXor};
 use std::ptr;
 use std::slice::ChunksExact;
 
-use stdext::arena::Arena;
-use stdext::arena_write_fmt;
-use stdext::collections::BString;
-use stdext::simd::memset;
+use crate::stdext::arena::Arena;
+use crate::stdext::arena_write_fmt;
+use crate::stdext::collections::BString;
+use crate::stdext::simd::memset;
 
 use crate::helpers::{CoordType, Point, Rect, Size};
 use crate::oklab::StraightRgba;

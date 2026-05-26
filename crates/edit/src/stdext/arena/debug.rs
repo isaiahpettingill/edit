@@ -8,7 +8,7 @@ use std::ops::Deref;
 use std::ptr::NonNull;
 
 use super::release;
-use crate::alloc::Allocator;
+use crate::stdext::alloc::Allocator;
 
 /// A debug wrapper for [`release::Arena`].
 ///

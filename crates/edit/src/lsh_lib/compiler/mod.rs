@@ -19,20 +19,20 @@ use std::fmt::Write as _;
 use std::mem::zeroed;
 use std::path::Path;
 
-use stdext::arena::Arena;
-use stdext::collections::BString;
-use stdext::opt_ptr_eq;
+use crate::stdext::arena::Arena;
+use crate::stdext::collections::BString;
+use crate::stdext::opt_ptr_eq;
 
 pub use self::charset::{Charset, SerializedCharset};
 use self::frontend::*;
 pub use self::generator::Generator;
-use crate::runtime::Register;
+use crate::lsh_lib::runtime::Register;
 
 pub fn builtin_definitions_path() -> &'static Path {
     #[cfg(windows)]
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "\\definitions");
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "\\src\\lsh_lib\\definitions");
     #[cfg(not(windows))]
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/definitions");
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/src/lsh_lib/definitions");
     Path::new(path)
 }
 

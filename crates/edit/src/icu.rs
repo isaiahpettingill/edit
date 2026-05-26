@@ -11,10 +11,10 @@ use std::ptr::{null, null_mut};
 use std::sync::OnceLock;
 use std::{fmt, mem};
 
-use stdext::arena::{Arena, scratch_arena};
-use stdext::arena_format;
-use stdext::collections::{BString, BVec};
-use stdext::unicode::Utf8Chars;
+use crate::stdext::arena::{Arena, scratch_arena};
+use crate::stdext::arena_format;
+use crate::stdext::collections::{BString, BVec};
+use crate::stdext::unicode::Utf8Chars;
 
 use crate::buffer::TextBuffer;
 use crate::sys;

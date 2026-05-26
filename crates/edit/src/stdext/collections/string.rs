@@ -6,9 +6,9 @@ use std::ops::{Bound, Deref, DerefMut, RangeBounds};
 use std::slice;
 use std::str::Utf8Error;
 
-use crate::alloc::Allocator;
-use crate::cold_path;
-use crate::collections::BVec;
+use crate::stdext::alloc::Allocator;
+use crate::stdext::cold_path;
+use crate::stdext::collections::BVec;
 
 /// Like a `String` but on borrowed memory. Built on top of [`BVec<u8>`].
 pub struct BString<'a> {

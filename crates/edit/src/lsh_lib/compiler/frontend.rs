@@ -14,7 +14,7 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
-use stdext::collections::BVec;
+use crate::stdext::collections::BVec;
 
 use super::*;
 

@@ -9,9 +9,9 @@ use std::path::{Path, PathBuf};
 use std::ptr::{self, NonNull, null, null_mut};
 use std::{io, mem, time};
 
-use stdext::arena::{Arena, scratch_arena};
-use stdext::arena_write_fmt;
-use stdext::collections::{BString, BVec};
+use crate::stdext::arena::{Arena, scratch_arena};
+use crate::stdext::arena_write_fmt;
+use crate::stdext::collections::{BString, BVec};
 use windows_sys::Win32::Storage::FileSystem;
 use windows_sys::Win32::System::{Console, IO, LibraryLoader, Threading};
 use windows_sys::Win32::{Foundation, Globalization};

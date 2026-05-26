@@ -8,10 +8,10 @@ use std::process::exit;
 
 use anyhow::bail;
 use argh::FromArgs;
-use lsh::compiler::SerializedCharset;
-use lsh::runtime::Runtime;
-use stdext::arena::scratch_arena;
-use stdext::glob::glob_match;
+use chedit::lsh_lib::compiler::SerializedCharset;
+use chedit::lsh_lib::runtime::Runtime;
+use chedit::stdext::arena::scratch_arena;
+use chedit::stdext::glob::glob_match;
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(description = "Debug and test frontend for LSH")]
@@ -59,11 +59,11 @@ pub fn main() {
 }
 
 fn run() -> anyhow::Result<()> {
-    stdext::arena::init(128 * 1024 * 1024).unwrap();
+    chedit::stdext::arena::init(128 * 1024 * 1024).unwrap();
 
     let command: Command = argh::from_env();
     let scratch = scratch_arena(None);
-    let mut generator = lsh::compiler::Generator::new(&scratch);
+    let mut generator = chedit::lsh_lib::compiler::Generator::new(&scratch);
     let mut read_lsh = |path: &Path| {
         if path.is_dir() { generator.read_directory(path) } else { generator.read_file(path) }
     };
@@ -100,7 +100,7 @@ fn run() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn run_render(generator: lsh::compiler::Generator, path: &Path) -> anyhow::Result<()> {
+fn run_render(generator: chedit::lsh_lib::compiler::Generator, path: &Path) -> anyhow::Result<()> {
     let assembly = generator.assemble()?;
 
     let Some(entrypoint) = assembly.entrypoints.iter().find(|ep| {

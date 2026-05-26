@@ -8,8 +8,8 @@ use std::mem::MaybeUninit;
 use std::ptr::{self, NonNull};
 use std::{io, mem, slice};
 
-use crate::alloc::Allocator;
-use crate::sys;
+use crate::stdext::alloc::Allocator;
+use crate::stdext::sys;
 
 #[cfg(target_pointer_width = "32")]
 const ALLOC_CHUNK_SIZE: usize = 32 * 1024;

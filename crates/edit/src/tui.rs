@@ -92,7 +92,7 @@
 //! use edit::helpers::Size;
 //! use edit::input::Input;
 //! use edit::tui::*;
-//! use stdext::{arena, arena_format};
+//! use crate::stdext::{arena, arena_format};
 //!
 //! struct State {
 //!     counter: i32,
@@ -147,9 +147,9 @@
 use std::collections::HashSet;
 use std::{io, iter, mem, ptr, time};
 
-use stdext::arena::{Arena, scratch_arena};
-use stdext::collections::{BString, BVec};
-use stdext::{ReplaceRange, arena_format, arena_write_fmt, opt_ptr_eq, str_from_raw_parts};
+use crate::stdext::arena::{Arena, scratch_arena};
+use crate::stdext::collections::{BString, BVec};
+use crate::stdext::{ReplaceRange, arena_format, arena_write_fmt, opt_ptr_eq, str_from_raw_parts};
 
 use crate::buffer::{CursorMovement, MoveLineDirection, RcTextBuffer, TextBuffer, TextBufferCell};
 use crate::cell::*;

@@ -19,8 +19,6 @@ harness = false
 debug-latency = []
 
 [dependencies]
-lsh.workspace = true
-stdext.workspace = true
 egui = "0.34.2"
 eframe = { version = "0.34.2", features = ["persistence"] }
 rfd = "0.17.2"
@@ -30,11 +28,12 @@ ttf-parser = "0.25.1"
 libc = "0.2"
 
 [build-dependencies]
-stdext.workspace = true
-lsh.workspace = true
 # The default toml crate bundles its dependencies with bad compile times. Thanks.
 # Thankfully toml-span exists. FWIW the alternative is yaml-rust (without the 2 suffix).
 toml-span = { version = "0.7", default-features = false }
+
+[target.'cfg(unix)'.build-dependencies]
+libc = "0.2"
 
 [target.'cfg(windows)'.build-dependencies]
 winresource = { version = "0.1", default-features = false }

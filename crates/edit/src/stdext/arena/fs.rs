@@ -7,8 +7,8 @@ use std::mem::MaybeUninit;
 use std::path::Path;
 use std::slice::from_raw_parts_mut;
 
-use crate::arena::Arena;
-use crate::collections::{BString, BVec};
+use crate::stdext::arena::Arena;
+use crate::stdext::collections::{BString, BVec};
 
 pub fn read_to_vec<P: AsRef<Path>>(arena: &'_ Arena, path: P) -> io::Result<BVec<'_, u8>> {
     fn inner<'a>(arena: &'a Arena, path: &Path) -> io::Result<BVec<'a, u8>> {

@@ -9,10 +9,10 @@ use std::ops::{Bound, Deref, DerefMut, Range, RangeBounds};
 use std::ptr::{self, NonNull};
 use std::{fmt, slice};
 
-use crate::alloc::Allocator;
+use crate::stdext::alloc::Allocator;
 #[cfg(debug_assertions)]
-use crate::alloc::GlobalAllocator;
-use crate::simd::memset;
+use crate::stdext::alloc::GlobalAllocator;
+use crate::stdext::simd::memset;
 
 /// Similar to slices in Go, this slice has an additional capacity field.
 /// It allows you to push more elements into the slice beyond its length,
@@ -472,7 +472,7 @@ impl<'a> BVec<'a, u16> {
             let beg = self.spare_mut_ptr();
             let mut dst = beg;
 
-            for ch in crate::unicode::Utf8Chars::new(utf8, 0) {
+            for ch in crate::stdext::unicode::Utf8Chars::new(utf8, 0) {
                 if ch <= '\u{FFFF}' {
                     (*dst).write(ch as u16);
                     dst = dst.add(1);

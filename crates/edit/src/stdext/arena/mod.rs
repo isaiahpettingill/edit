@@ -20,7 +20,7 @@ pub use self::scratch::*;
 macro_rules! arena_format {
     ($arena:expr, $($arg:tt)*) => {{
         use std::fmt::Write as _;
-        let mut output = ::stdext::collections::BString::empty();
+        let mut output = $crate::stdext::collections::BString::empty();
         let _ = output.formatter($arena).write_fmt(format_args!($($arg)*));
         output
     }}

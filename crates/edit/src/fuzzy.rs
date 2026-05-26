@@ -5,8 +5,8 @@
 //! Other algorithms exist, such as Sublime Text's, or the one used in `fzf`,
 //! but I figured that this one is what lots of people may be familiar with.
 
-use stdext::arena::{Arena, scratch_arena};
-use stdext::collections::BVec;
+use crate::stdext::arena::{Arena, scratch_arena};
+use crate::stdext::collections::BVec;
 
 use crate::icu;
 

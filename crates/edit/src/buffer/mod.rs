@@ -34,10 +34,10 @@ use std::rc::Rc;
 use std::str;
 
 pub use gap_buffer::GapBuffer;
-use stdext::arena::{Arena, scratch_arena};
-use stdext::collections::{BString, BVec};
-use stdext::unicode::Utf8Chars;
-use stdext::{ReplaceRange as _, arena_write_fmt, minmax, slice_as_uninit_mut, slice_copy_safe};
+use crate::stdext::arena::{Arena, scratch_arena};
+use crate::stdext::collections::{BString, BVec};
+use crate::stdext::unicode::Utf8Chars;
+use crate::stdext::{ReplaceRange as _, arena_write_fmt, minmax, slice_as_uninit_mut, slice_copy_safe};
 
 use crate::cell::SemiRefCell;
 use crate::clipboard::Clipboard;

@@ -14,10 +14,10 @@ use std::fs::read_dir;
 use std::io;
 use std::path::PathBuf;
 
-use stdext::arena::scratch_arena;
+use crate::stdext::arena::scratch_arena;
 
 use super::*;
-use crate::runtime::{Instruction, MnemonicFormattingConfig};
+use crate::lsh_lib::runtime::{Instruction, MnemonicFormattingConfig};
 
 pub struct Generator<'a> {
     compiler: Compiler<'a>,
@@ -172,7 +172,7 @@ impl<'a> Generator<'a> {
 
         let mut output = String::new();
         output.push_str("// This file is auto-generated. Do not edit it manually.\n\n");
-        output.push_str("use lsh::runtime::Language;\n\n");
+        output.push_str("use crate::lsh_lib::runtime::Language;\n\n");
 
         output.push_str("#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum HighlightKind {\n");
         let members: Vec<_> = assembly

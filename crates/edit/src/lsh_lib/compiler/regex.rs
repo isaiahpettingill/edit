@@ -45,7 +45,7 @@
 
 use std::slice;
 
-use stdext::collections::BVec;
+use crate::stdext::collections::BVec;
 
 use super::*;
 
