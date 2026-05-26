@@ -27,5 +27,5 @@ codegen-units = 16          # Make compiling criterion faster (16 is the default
 lto = "thin"                # Similarly, speed up linking by a ton
 
 [workspace.dependencies]
-chedit = { path = "./crates/edit", version = "2.0.0" }
+chedit = { path = "./crates/edit", version = "2.0.1" }
 unicode-gen = { path = "./crates/unicode-gen" }
