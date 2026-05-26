@@ -3,9 +3,11 @@
 
 #![allow(irrefutable_let_patterns)]
 
+#[allow(unused)]
 #[path = "../src/stdext/mod.rs"]
 mod stdext;
 
+#[allow(unused)]
 #[path = "../src/lsh_lib/mod.rs"]
 mod lsh_lib;
 
